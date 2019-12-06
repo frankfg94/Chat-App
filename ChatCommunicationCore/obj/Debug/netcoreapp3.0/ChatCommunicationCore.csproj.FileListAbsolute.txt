@@ -1,0 +1,8 @@
+C:\Users\franc\source\repos\Web_App_Core\ChatCommunicationCore\bin\Debug\netcoreapp3.0\ChatCommunicationCore.deps.json
+C:\Users\franc\source\repos\Web_App_Core\ChatCommunicationCore\bin\Debug\netcoreapp3.0\ChatCommunicationCore.dll
+C:\Users\franc\source\repos\Web_App_Core\ChatCommunicationCore\bin\Debug\netcoreapp3.0\ChatCommunicationCore.pdb
+C:\Users\franc\source\repos\Web_App_Core\ChatCommunicationCore\obj\Debug\netcoreapp3.0\ChatCommunicationCore.csprojAssemblyReference.cache
+C:\Users\franc\source\repos\Web_App_Core\ChatCommunicationCore\obj\Debug\netcoreapp3.0\ChatCommunicationCore.AssemblyInfoInputs.cache
+C:\Users\franc\source\repos\Web_App_Core\ChatCommunicationCore\obj\Debug\netcoreapp3.0\ChatCommunicationCore.AssemblyInfo.cs
+C:\Users\franc\source\repos\Web_App_Core\ChatCommunicationCore\obj\Debug\netcoreapp3.0\ChatCommunicationCore.dll
+C:\Users\franc\source\repos\Web_App_Core\ChatCommunicationCore\obj\Debug\netcoreapp3.0\ChatCommunicationCore.pdb

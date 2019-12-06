@@ -1,0 +1,16 @@
+C:\Users\franc\source\repos\Web_App_Core\Web_App_Core\bin\Debug\netcoreapp3.0\Web_App_Core_Client.exe
+C:\Users\franc\source\repos\Web_App_Core\Web_App_Core\bin\Debug\netcoreapp3.0\Web_App_Core_Client.deps.json
+C:\Users\franc\source\repos\Web_App_Core\Web_App_Core\bin\Debug\netcoreapp3.0\Web_App_Core_Client.runtimeconfig.json
+C:\Users\franc\source\repos\Web_App_Core\Web_App_Core\bin\Debug\netcoreapp3.0\Web_App_Core_Client.runtimeconfig.dev.json
+C:\Users\franc\source\repos\Web_App_Core\Web_App_Core\bin\Debug\netcoreapp3.0\Web_App_Core_Client.dll
+C:\Users\franc\source\repos\Web_App_Core\Web_App_Core\bin\Debug\netcoreapp3.0\Web_App_Core_Client.pdb
+C:\Users\franc\source\repos\Web_App_Core\Web_App_Core\bin\Debug\netcoreapp3.0\ChatCommunicationClient.dll
+C:\Users\franc\source\repos\Web_App_Core\Web_App_Core\bin\Debug\netcoreapp3.0\ChatCommunicationClient.pdb
+C:\Users\franc\source\repos\Web_App_Core\Web_App_Core\obj\Debug\netcoreapp3.0\Web_App_Core_Client.csprojAssemblyReference.cache
+C:\Users\franc\source\repos\Web_App_Core\Web_App_Core\obj\Debug\netcoreapp3.0\Web_App_Core_Client.AssemblyInfoInputs.cache
+C:\Users\franc\source\repos\Web_App_Core\Web_App_Core\obj\Debug\netcoreapp3.0\Web_App_Core_Client.AssemblyInfo.cs
+C:\Users\franc\source\repos\Web_App_Core\Web_App_Core\obj\Debug\netcoreapp3.0\Web_App_Core_Client.csproj.CopyComplete
+C:\Users\franc\source\repos\Web_App_Core\Web_App_Core\obj\Debug\netcoreapp3.0\Web_App_Core_Client.dll
+C:\Users\franc\source\repos\Web_App_Core\Web_App_Core\obj\Debug\netcoreapp3.0\Web_App_Core_Client.pdb
+C:\Users\franc\source\repos\Web_App_Core\Web_App_Core\bin\Debug\netcoreapp3.0\ChatCommunicationCore.dll
+C:\Users\franc\source\repos\Web_App_Core\Web_App_Core\bin\Debug\netcoreapp3.0\ChatCommunicationCore.pdb

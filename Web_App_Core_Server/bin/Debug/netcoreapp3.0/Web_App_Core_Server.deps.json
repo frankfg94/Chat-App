@@ -1,0 +1,49 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v3.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v3.0": {
+      "Web_App_Core_Server/1.0.0": {
+        "dependencies": {
+          "ChatCommunicationServer": "1.0.0"
+        },
+        "runtime": {
+          "Web_App_Core_Server.dll": {}
+        }
+      },
+      "ChatCommunicationCore/1.0.0": {
+        "runtime": {
+          "ChatCommunicationCore.dll": {}
+        }
+      },
+      "ChatCommunicationServer/1.0.0": {
+        "dependencies": {
+          "ChatCommunicationCore": "1.0.0"
+        },
+        "runtime": {
+          "ChatCommunicationServer.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Web_App_Core_Server/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "ChatCommunicationCore/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "ChatCommunicationServer/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
