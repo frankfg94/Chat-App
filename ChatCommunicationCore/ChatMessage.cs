@@ -16,5 +16,10 @@ namespace ChatCommunication
             this.content = content;
         }
 
+        public override string ToString()
+        {
+          return  $"[{author.username}] {content} ({date})";
+        }
+
     }
 }

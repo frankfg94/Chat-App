@@ -4,7 +4,7 @@ using System.Runtime.Serialization;
 namespace ChatCommunication
 {
     [Serializable]
-    internal class InvalidCommandFormatException : Exception
+    public class InvalidCommandFormatException : Exception
     {
         public InvalidCommandFormatException()
         {

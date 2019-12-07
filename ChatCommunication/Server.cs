@@ -11,8 +11,6 @@ namespace ChatCommunication
     {
 
         public static List<Topic> topicList = new List<Topic>();
-        public static List<User> users = new List<User>();
-        public static readonly List<TcpClient> clients = new List<TcpClient>();
 
         public void Start(IPAddress iPAddress,int port)
         {
@@ -23,7 +21,7 @@ namespace ChatCommunication
             {
                 var comm = l.AcceptTcpClient();
                 Console.WriteLine("Connection established for endpoint : " + comm.Client.RemoteEndPoint);
-                clients.Add(comm);
+                Data.userClients.Add(new ClientUser { user = new User("guest", "guest"), tcpClient = comm});
                 new Thread(new ReceiverServer(comm).doOperation).Start();
             }
         }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
@@ -16,7 +17,7 @@ namespace ChatCommunication
         public bool isAuthentified = false;
 
         /// <summary>
-        /// The current topic an user has joined
+        /// The current topic an user is in
         /// </summary>
         Topic currentTopic = null;
 
@@ -24,8 +25,6 @@ namespace ChatCommunication
         {
             this.username = login;
             this.password = password;
-            this.id = idUser;
-            idUser++;
         }
 
         public Message CreateTopic(string name, List<User> invitedUsers)
@@ -78,34 +77,38 @@ namespace ChatCommunication
 
         private static User bot = new User("Bot","bot");
 
-        public void SendMessageToUser(TcpClient comm, Message msg)
+        public void SendMessageToUser( Message msg)
         {
-            var userId = int.Parse(msg.GetArgument(ArgType.USERNAME));
+            var username = msg.GetArgument(ArgType.USERNAME);
             var chatMessage = msg.GetArgument(ArgType.MESSAGE);
-            SendMessageToUser(comm.GetStream(), userId, chatMessage);
+            TcpClient destClient = Data.RetrieveClientFromUsername(username);
+            SendMessageToUser(destClient.GetStream(), username, chatMessage);
         }
 
         // 1 . The server receives the message from User 1
         // 2 (HERE) . The server redirects the messsage to User 2
         // To find User 2, we use its id
-        private void SendMessageToUser(Stream destStream, int destUserId, string text)
+        private void SendMessageToUser(Stream destStream, string username, string msgContent)
         {
            var users =  User.GetAllUsers();
-           var destUser = users.Find(u => u.id == destUserId);
-            if(destUser == null)
+           var destUser = users.Find(u => u.username.Equals(username));
+            if (destUser == null)
             {
-                Console.WriteLine("User not found");
+                throw new NullReferenceException($"Destination User '{username}' not found");
             }
             else
             {
-                new ChatMessage(DateTime.Now, this,text);
-                Console.WriteLine("msg sent to user!");
+                var chatMsg = new ChatMessage(DateTime.Now, this, msgContent);
                 Net.SendMsg(
                     destStream,
-                    new Message(this,"rcv user msg | " + text));
+                    new Message(this, $"rcv user msg | data") { content = chatMsg, mustBeParsed = true});
+                Console.WriteLine("msg sent to user : " + destUser.username);
             }
            
         }
+
+   
+
 
         public static User GetBotUser()
         {
@@ -119,14 +122,20 @@ namespace ChatCommunication
             SendMessageInTopic(client,topicName,chatMessage);
         }
 
-        ///// <summary>
-        ///// Client side operation
-        ///// </summary>
-        ///// <returns></returns>
-        //public Message RefreshTopic(string topicName,string newMsg)
-        //{
+        public void SendFileToUser(Message msg)
+        {
+            SendFileToUser(msg.GetArgument(ArgType.USERNAME),msg.content as byte[], msg.GetArgument(ArgType.NAME));
+        }
 
-        //}
+        public void SendFileToUser(string destUsername, byte[] data, string nameWithFormat)
+        {
+           TcpClient destClient = Data.RetrieveClientFromUsername(destUsername);
+            Console.WriteLine("Data to send size : " + data.Length);
+            Net.SendMsg(
+                    destClient.GetStream(),
+                    new Message(this, $"rcv file user | n:{nameWithFormat}") { content = data, mustBeParsed = true });
+            Console.WriteLine("File sent to the user "+ destUsername +" with a byte array : " + nameWithFormat);
+        }
 
         public Message AddNewTopic(Message m, bool authSelf = true)
         {
@@ -161,7 +170,8 @@ namespace ChatCommunication
              userList = new List<User>()
             {
                 new User("Marc","m"),
-                new User("François","123")
+                new User("François","123"),
+                new User("Marine","Marine")
             };
 
             return userList;

@@ -31,17 +31,16 @@ namespace ChatCommunication
                         Message data = Net.RcvMsg(comm.GetStream());
                         if (data is Message msg)
                         {
-                            msg.Parse();
-                            Console.WriteLine("Signal received : " + msg.fullCommand);
-                            if(msg.user.isAuthentified)
-                            {
-                                doOperationsAsUser(msg,msg.CommandPart,comm);
-                            }
-                            else
-                            {
-                                TryConnectAsUser(msg);
-                            }
-
+                                msg.Parse();
+                                Console.WriteLine("Signal received : " + msg.fullCommand);
+                                if(msg.user.isAuthentified)
+                                {
+                                    doOperationsAsUser(msg,msg.CommandPart,comm);
+                                }
+                                else
+                                {
+                                    TryConnectAsUser(msg);
+                                }
                         }
                     }
                 }
@@ -53,6 +52,7 @@ namespace ChatCommunication
                         Console.WriteLine("Invalid command format " + ex);
                         Console.WriteLine(ex.StackTrace);
                         Net.SendMsg(comm.GetStream(), new Message(User.GetBotUser(), "Invalid command format " + ex.Message));
+                        Console.WriteLine("--> Sent an invalid command format message to the client");
                     }
                 }
             }
@@ -70,18 +70,24 @@ namespace ChatCommunication
                 return;
             }
 
-            if (VerifyCredentials(msg.GetArgument(ArgType.USERNAME), msg.GetArgument(ArgType.PASSWORD), out string textMsg))
+            if (VerifyCredentials(msg.GetArgument(ArgType.USERNAME), msg.GetArgument(ArgType.PASSWORD), out string textMsg, out User connectedUser))
             {
-                msg.user.isAuthentified = true;
-                Console.WriteLine("Connection authorized! sending the news to the client");
+                connectedUser.isAuthentified = true;
+
+                // Updating the user
+                Data.userClients.Find(x => x.tcpClient.Client.Equals(comm.Client)).user = connectedUser;
+               
+                Console.WriteLine("Connection authorized! sending the connected user to the client");
             }
             else
             {
                 Console.WriteLine("A client failed to connect itself to the server, Reason : " + textMsg);
             }
-            var resp = new Message(User.GetBotUser(), $"auth status | r:{msg.user.isAuthentified} m:{textMsg.Replace(' ', '_')}");
-            resp.mustBeParsed = true;
-            Net.SendMsg(comm.GetStream(), resp);
+            var respToTheClient = new Message(User.GetBotUser(), $"auth status | r:{msg.user.isAuthentified} m:{textMsg.Replace(' ', '_')}");
+            respToTheClient.mustBeParsed = true;
+            respToTheClient.content = connectedUser;
+            Net.SendMsg(comm.GetStream(), respToTheClient);
+            
         }
 
         public void doOperationsAsUser(Message msg,string commandLine, TcpClient comm)
@@ -107,14 +113,18 @@ namespace ChatCommunication
                 msg = msg.user.GetConversationOfTopic(msg.GetArgument(ArgType.NAME));
                 break;
             case "msg user":
-                msg.user.SendMessageToUser(comm, msg);
+                msg.user.SendMessageToUser(msg);
+                msg = null;
                 break;
-            case "get topics":
+            case "send file user":
+               msg.user.SendFileToUser(msg);
+               msg = null;
+               break;
+            case "download topics":
                 msg.user.SyncTopicsForHisClient(comm, msg);
                 msg = null;
                 break;
             case "help":
-
                 break;
             default:
                 string err = "unknown command was entered : " + msg.fullCommand;

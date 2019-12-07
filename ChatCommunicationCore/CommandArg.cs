@@ -23,6 +23,7 @@ namespace ChatCommunication
         public const string MESSAGE = "m";
         public const string PASSWORD = "p";
         public const string RESULT = "r";
+        public const string PATH = "p";
         private static string[] keyArr = { USERNAME, TEXT, NAME , MESSAGE, PASSWORD, RESULT};
 
         internal static bool KeyIsValid(string key)

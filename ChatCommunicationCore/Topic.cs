@@ -30,11 +30,13 @@ namespace ChatCommunication
             Console.WriteLine("Message sent in topic : " + Name);
 
             // Refresh the client messages
-
-            var msg = new Message(User.GetBotUser(), $"refresh topic | n:{Name}") ;
+            foreach (var u in users)
+            {
+                var msg = new Message(User.GetBotUser(), $"refresh topic | n:{Name}") ;
                 msg.mustBeParsed = true;
                 msg.content = chatMessage;
-                Net.SendMsg(client.GetStream(), msg); // Refresh all the clients that are in this topic
+                Net.SendMsg(Data.RetrieveClientFromUsername(u.username).GetStream(), msg); // Refresh all the clients that are in this topic
+            }
         }
     }
 }
