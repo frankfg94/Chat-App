@@ -24,7 +24,8 @@ namespace ChatCommunication
         public const string PASSWORD = "p";
         public const string RESULT = "r";
         public const string PATH = "p";
-        private static string[] keyArr = { USERNAME, TEXT, NAME , MESSAGE, PASSWORD, RESULT};
+        public const string FILENAME_WITH_FORMAT = "fn";
+        private static string[] keyArr = { USERNAME, TEXT, NAME , MESSAGE, PASSWORD, RESULT, FILENAME_WITH_FORMAT};
 
         internal static bool KeyIsValid(string key)
         {

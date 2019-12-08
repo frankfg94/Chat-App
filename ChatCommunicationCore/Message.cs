@@ -101,7 +101,12 @@ namespace ChatCommunication
             if(args == null)
                 args = GetArguments();
 
-            return args.Find(x => x.key == argKey).value ;
+            var arg = args.Find(x => x.key == argKey);
+            
+            if (arg == null)
+                throw new NullReferenceException("Couldn't find the value in the entered command for the following key : " + argKey );
+            
+            return arg.value ;
         }
     }
 }

@@ -10,13 +10,11 @@ namespace ChatCommunication
 {
     public class Net
     {
-        private static object o = new object();
         public static void SendMsg(Stream s, Message msg)
         {
             BinaryFormatter bf = new BinaryFormatter();
             bf.Serialize(s, msg);
         }   
-
 
         public static Message RcvMsg(Stream s)
         {
@@ -24,16 +22,6 @@ namespace ChatCommunication
                 BinaryFormatter bf = new BinaryFormatter();
                 return (Message)bf.Deserialize(s);
         }
-
-        //internal static Message RcvTopics(Stream s)
-        //{
-        //    lock (m)
-        //    {
-        //        BinaryFormatter bf = new BinaryFormatter();
-        //        return (Message)bf.Deserialize(s);
-        //    }
-        //}
-
 
     }
 }

@@ -17,7 +17,7 @@ namespace ChatCommunication
             User u = User.GetAllUsers().Find(x => x.username.Equals(username));
             if (u != null && u.isAuthentified)
             {
-                foreach (var userClient in Data.userClients)
+                foreach (var userClient in userClients)
                 {
                     if (userClient.user.username.Equals(username))
                         return userClient.tcpClient;

@@ -24,12 +24,12 @@ namespace ChatCommunication
         }
 
         // run by the server
-        internal void AddMessageAndSync(TcpClient client ,ChatMessage chatMessage)
+        internal void AddMessageAndSync(ChatMessage chatMessage)
         {
             chatMessages.Add(chatMessage);
             Console.WriteLine("Message sent in topic : " + Name);
 
-            // Refresh the client messages
+            // Refresh the messages for each client
             foreach (var u in users)
             {
                 var msg = new Message(User.GetBotUser(), $"refresh topic | n:{Name}") ;

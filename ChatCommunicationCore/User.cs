@@ -59,7 +59,6 @@ namespace ChatCommunication
                     conversation.AppendLine($" >> The conversation is empty for the topic '{name}'");
                 }
                 return new Message(User.GetBotUser(),conversation.ToString());
-           // }
         }
 
         /// <summary>
@@ -77,11 +76,12 @@ namespace ChatCommunication
 
         private static User bot = new User("Bot","bot");
 
+        // msg user | u:William m:coucou
         public void SendMessageToUser( Message msg)
         {
-            var username = msg.GetArgument(ArgType.USERNAME);
-            var chatMessage = msg.GetArgument(ArgType.MESSAGE);
-            TcpClient destClient = Data.RetrieveClientFromUsername(username);
+            var username = msg.GetArgument(ArgType.USERNAME); // william
+            var chatMessage = msg.GetArgument(ArgType.MESSAGE); // coucou
+            TcpClient destClient = Data.RetrieveClientFromUsername(username); // william
             SendMessageToUser(destClient.GetStream(), username, chatMessage);
         }
 
@@ -109,17 +109,20 @@ namespace ChatCommunication
 
    
 
-
+        /// <summary>
+        /// Return the user that represents the server
+        /// </summary>
+        /// <returns></returns>
         public static User GetBotUser()
         {
             return bot;
         }
 
-        public void SendMessageInTopic(TcpClient client,Message msg)
+        public void SendMessageInTopic(Message msg)
         {
             var topicName = msg.GetArgument(ArgType.NAME);
             var chatMessage = msg.GetArgument(ArgType.MESSAGE);
-            SendMessageInTopic(client,topicName,chatMessage);
+            SendMessageInTopic(topicName,chatMessage);
         }
 
         public void SendFileToUser(Message msg)
@@ -135,6 +138,26 @@ namespace ChatCommunication
                     destClient.GetStream(),
                     new Message(this, $"rcv file user | n:{nameWithFormat}") { content = data, mustBeParsed = true });
             Console.WriteLine("File sent to the user "+ destUsername +" with a byte array : " + nameWithFormat);
+        }
+
+
+        public void SendFileInTopic(Message msg)
+        {
+            SendFileInTopic(msg.GetArgument(ArgType.NAME), msg.GetArgument(ArgType.FILENAME_WITH_FORMAT), msg.content as byte[]);
+        }
+
+        private void SendFileInTopic(string topicName, string fileName, byte[] fileData)
+        {
+            Console.WriteLine($"Data to send size to the topic {topicName} : " + fileData.Length);
+            Topic t = Data.topicList.Find(x => x.Name.Equals(topicName));
+            foreach (var user in t.users)
+            {
+                TcpClient destClient = Data.RetrieveClientFromUsername(user.username);
+                Net.SendMsg(
+                        destClient.GetStream(),
+                        new Message(this, $"rcv file user | n:{fileName}") { content = fileData, mustBeParsed = true });
+                Console.WriteLine("File sent to the user " + user.username + " with a byte array : " + fileName);
+            }
         }
 
         public Message AddNewTopic(Message m, bool authSelf = true)
@@ -161,6 +184,20 @@ namespace ChatCommunication
             return CreateTopic(topicName,invitedUsernames);
         }
 
+        public void SendAudioMsgToUser(Message msg)
+        {
+            var destUsername = msg.GetArgument(ArgType.USERNAME);
+            var audioData = msg.content as byte[];
+            SendAudioMsgToUser(destUsername,audioData);
+        }
+
+        private void SendAudioMsgToUser(string destUsername, byte[] audioData)
+        {
+            var client = Data.RetrieveClientFromUsername(destUsername);
+            Message m = new Message(this, $"rcv audio | data") { mustBeParsed = true};
+            m.content = audioData;
+            Net.SendMsg(client.GetStream(), m);
+        }
 
         public static List<User> userList;
 
@@ -177,6 +214,7 @@ namespace ChatCommunication
             return userList;
         }
 
+
         public Message ListTopics()
         {
             StringBuilder sb = new StringBuilder();
@@ -186,7 +224,7 @@ namespace ChatCommunication
                 int i = 1;
                 foreach(Topic t in Data.topicList)
                 {
-                    var line = i + ")" + t.Name;
+                    var line = $"{i}) {t.Name} ({t.chatMessages.Count} msgs)" ;
                     if (t.users.Find(x => x.id == this.id) == null)
                     {
                         line += " [UNAUTHORIZED]";
@@ -226,31 +264,29 @@ namespace ChatCommunication
         /// <returns></returns>
         public Message EnterTopic(Topic topic)
         {
-            if(!topic.users.Contains(this))
+            if (topic.users.Find(x => x.username.Equals(username)) == null)
             {
                 topic.users.Add(this);
+                Console.WriteLine($"User {username} has entered the chat in the topic " + topic.Name);
+                return GetConversationOfTopic(topic.Name);
+            }
+            else
+            {
+                return new Message(this, "You have already joined this topic") { mustBeParsed = false};
             }
 
-            Console.WriteLine($"User {username} has entered the chat in the topic " + topic.Name);
-            return new Message(GetBotUser(), $"view topic | n:{topic.Name} ");
         }
 
-        public void SendMessageInTopic(TcpClient client, string name, string content)
+        public void SendMessageInTopic(string name, string content)
         {
             foreach (Topic t in Data.topicList)
             {
                 if (t.Name.Equals(name))
                 {
-                    t.AddMessageAndSync(client,new ChatMessage(DateTime.Now, this, content));
+                    t.AddMessageAndSync(new ChatMessage(DateTime.Now, this, content));
                 }
             }
         }
-
-        public void SendPrivateMessage(User user)
-        {
-
-        }
-
-        
+ 
     }
 }

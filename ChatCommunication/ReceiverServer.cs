@@ -31,16 +31,16 @@ namespace ChatCommunication
                         Message data = Net.RcvMsg(comm.GetStream());
                         if (data is Message msg)
                         {
-                                msg.Parse();
-                                Console.WriteLine("Signal received : " + msg.fullCommand);
-                                if(msg.user.isAuthentified)
-                                {
-                                    doOperationsAsUser(msg,msg.CommandPart,comm);
-                                }
-                                else
-                                {
-                                    TryConnectAsUser(msg);
-                                }
+                            msg.Parse();
+                            Console.WriteLine("Signal received : " + msg.fullCommand);
+                            if (msg.user.isAuthentified)
+                            {
+                                doOperationsAsUser(msg, msg.CommandPart, comm);
+                            }
+                            else
+                            {
+                                LoginOrSubscribeAsUser(msg);
+                            }
                         }
                     }
                 }
@@ -59,80 +59,121 @@ namespace ChatCommunication
         }
 
         // Sending a response to the client whether the connection is sucessful or not
-        private void TryConnectAsUser(Message msg)
+        private void LoginOrSubscribeAsUser(Message msg)
         {
-            // Verify that we just want to connect ourselves first
-            if(!msg.fullCommand.StartsWith("connect"))
+            // Create User
+            if (msg.fullCommand.StartsWith("subscribe"))
             {
-                var firstMes = new Message(User.GetBotUser(),"You have to connect yourself first before using any other command. Use : connect | u:{username} p:{password}");
-                firstMes.mustBeParsed = false;
-                Net.SendMsg(comm.GetStream(), firstMes);
-                return;
-            }
-
-            if (VerifyCredentials(msg.GetArgument(ArgType.USERNAME), msg.GetArgument(ArgType.PASSWORD), out string textMsg, out User connectedUser))
-            {
-                connectedUser.isAuthentified = true;
-
-                // Updating the user
-                Data.userClients.Find(x => x.tcpClient.Client.Equals(comm.Client)).user = connectedUser;
-               
-                Console.WriteLine("Connection authorized! sending the connected user to the client");
+                Message respToTheClient;
+                if (TryCreateUser(msg.GetArgument(ArgType.USERNAME), msg.GetArgument(ArgType.PASSWORD), out string errMsg))
+                    respToTheClient = new Message(User.GetBotUser(), $"Your user has been created successfully, please connect");
+                else
+                    respToTheClient = new Message(User.GetBotUser(), $"(!) Couldn't create an user ({errMsg})");
+                respToTheClient.mustBeParsed = false;
+                Net.SendMsg(comm.GetStream(), respToTheClient);
             }
             else
             {
-                Console.WriteLine("A client failed to connect itself to the server, Reason : " + textMsg);
+                // Verify that we just want to connect ourselves first
+                if (!msg.fullCommand.StartsWith("connect"))
+                {
+                    var firstMes = new Message(User.GetBotUser(), "You have to connect yourself first before using any other command. Use : connect | u:{username} p:{password}");
+                    firstMes.mustBeParsed = false;
+                    Net.SendMsg(comm.GetStream(), firstMes);
+                    return;
+                }
+                if (VerifyCredentials(msg.GetArgument(ArgType.USERNAME), msg.GetArgument(ArgType.PASSWORD), out string textMsg, out User connectedUser))
+                {
+                    connectedUser.isAuthentified = true;
+
+                    // Updating the user
+                    Data.userClients.Find(x => x.tcpClient.Client.Equals(comm.Client)).user = connectedUser;
+
+                    Console.WriteLine("Connection authorized! sending the connected user to the client");
+                }
+                else
+                {
+                    Console.WriteLine("A client failed to connect itself to the server, Reason : " + textMsg);
+                }
+                var respToTheClient = new Message(User.GetBotUser(), $"auth status | r:{msg.user.isAuthentified} m:{textMsg.Replace(' ', '_')}");
+                respToTheClient.mustBeParsed = true;
+                respToTheClient.content = connectedUser;
+                Net.SendMsg(comm.GetStream(), respToTheClient);
             }
-            var respToTheClient = new Message(User.GetBotUser(), $"auth status | r:{msg.user.isAuthentified} m:{textMsg.Replace(' ', '_')}");
-            respToTheClient.mustBeParsed = true;
-            respToTheClient.content = connectedUser;
-            Net.SendMsg(comm.GetStream(), respToTheClient);
-            
+
         }
 
-        public void doOperationsAsUser(Message msg,string commandLine, TcpClient comm)
-    {
-        switch (msg.CommandPart)
+        private bool TryCreateUser(string username, string password, out string errMsg)
         {
-            case "create topic":
-                msg = msg.user.AddNewTopic(msg);
-                break;
-            case "list topics":
-                msg = msg.user.ListTopics();
-                break;
-            case "join topic":
-            case "enter topic":
-            case "join":
-                msg = msg.user.EnterTopic(msg);
-                break;
-            case "msg topic":
-                msg.user.SendMessageInTopic(comm, msg);
-                msg = null;
-                break;
-            case "view topic":
-                msg = msg.user.GetConversationOfTopic(msg.GetArgument(ArgType.NAME));
-                break;
-            case "msg user":
-                msg.user.SendMessageToUser(msg);
-                msg = null;
-                break;
-            case "send file user":
-               msg.user.SendFileToUser(msg);
-               msg = null;
-               break;
-            case "download topics":
-                msg.user.SyncTopicsForHisClient(comm, msg);
-                msg = null;
-                break;
-            case "help":
-                break;
-            default:
-                string err = "unknown command was entered : " + msg.fullCommand;
-                msg.fullCommand = err;
-                Console.WriteLine(err);
-                break;
-
+            foreach (var user in User.GetAllUsers())
+            {
+                if (user.username.Equals(username))
+                {
+                    errMsg = "User already exists";
+                    return false;
+                }
+            }
+            User u = new User(username, password);
+            User.userList.Add(u);
+            errMsg = string.Empty;
+            return true;
         }
+
+        public void doOperationsAsUser(Message msg, string commandLine, TcpClient comm)
+        {
+            switch (msg.CommandPart)
+            {
+                case "create topic":
+                    msg = msg.user.AddNewTopic(msg);
+                    break;
+                case "list topics":
+                    msg = msg.user.ListTopics();
+                    break;
+                case "join topic":
+                case "enter topic":
+                case "join":
+                    msg = msg.user.EnterTopic(msg);
+                    break;
+                case "msg topic":
+                case "send msg topic":
+                    msg.user.SendMessageInTopic(msg);
+                    msg = null;
+                    break;
+                case "list msg topic":
+                case "view topic":
+                    msg = msg.user.GetConversationOfTopic(msg.GetArgument(ArgType.NAME));
+                    break;
+                case "msg user":
+                    msg.user.SendMessageToUser(msg);
+                    msg = null;
+                    break;
+                case "send file user":
+                    msg.user.SendFileToUser(msg);
+                    msg = null;
+                    break;
+                case "send file topic":
+                    msg.user.SendFileInTopic(msg);
+                    msg = null;
+                    break;
+                case "send audio user":
+                    msg.user.SendAudioMsgToUser(msg);
+                    msg = null;
+                    break;
+                case "download topics":
+                    msg.user.SyncTopicsForHisClient(comm, msg);
+                    msg = null;
+                    break;
+                case "block user":
+                    break;
+                case "help":
+                    break;
+                default:
+                    string err = "unknown command was entered : " + msg.fullCommand;
+                    msg.fullCommand = err;
+                    Console.WriteLine(err);
+                    break;
+
+            }
             if (msg != null)
             {
                 Net.SendMsg(comm.GetStream(), msg);
