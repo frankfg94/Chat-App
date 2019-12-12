@@ -25,7 +25,7 @@ namespace ChatCommunication
             }
             return null;
         }
-    }    
+    }
 
     public class ClientUser
     {

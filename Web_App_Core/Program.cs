@@ -10,7 +10,6 @@ namespace Web_App_Core
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Done");
             new ReceiverClient().JoinServerConsole();
         }
     }

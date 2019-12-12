@@ -21,6 +21,12 @@ namespace ChatCommunication
                 {
                     if (user.password.Equals(password))
                     {
+                        if(user.isAuthentified)
+                        {
+                            msg = $"User is already connected";
+                            u = null;
+                            return false;
+                        }
                         msg = $"Connection is successful for '{login}'";
                         u = user;
                         return true;

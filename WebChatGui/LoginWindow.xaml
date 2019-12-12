@@ -1,0 +1,51 @@
+﻿<Window x:Class="WebChatGui.LoginWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WebChatGui"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        mc:Ignorable="d" Background="Transparent" WindowStyle="None"
+        Title="MainWindow" AllowsTransparency="True" Height="450" Width="800">
+
+    
+
+    <Grid MouseDown="Grid_MouseDown">
+        <Grid.RowDefinitions>
+        </Grid.RowDefinitions>
+        <Border Width="600" MinWidth="400" CornerRadius="40" Margin="20" Background="#FFF7EC52" Grid.RowSpan="2">
+            <StackPanel  x:Name="stackPanel"  Width="400" HorizontalAlignment="Center" VerticalAlignment="Center"  >
+                <StackPanel.RenderTransform>
+                    <TransformGroup>
+                        <ScaleTransform/>
+                        <SkewTransform/>
+                        <RotateTransform/>
+                        <TranslateTransform/>
+                    </TransformGroup>
+                </StackPanel.RenderTransform>
+                <Label x:Name="label" HorizontalAlignment="Center" Content="Hello, please connect" FontSize="23" Foreground="#DD4E4A4A"/>
+                <StackPanel   HorizontalAlignment="Center"  x:Name="stackPanel1" Margin="0,20,0,0"   Width="auto" Orientation="Horizontal">
+                    <materialDesign:PackIcon x:Name="packIcon"  Height="30" Width="30"  VerticalAlignment="Bottom" Kind="User" />
+                    <TextBox Foreground="Gray"    Margin="7,0,0,0" Padding="1" Height="30" x:Name="usernameTB" Width="300" SelectionBrush="Orange" />
+                </StackPanel>
+                <StackPanel HorizontalAlignment="Center" x:Name="stackPanel2"  VerticalAlignment="Center"  Margin="0,20,0,20" Orientation="Horizontal">
+                    <materialDesign:PackIcon x:Name="packIcon1"  Height="30" Width="30" VerticalAlignment="Bottom" Kind="Key"/>
+                    <PasswordBox  Foreground="Gray" Margin="7,0,0,0" Padding="1" Height="30" x:Name="userPassword" Width="300"  SelectionBrush="Orange"  />
+                </StackPanel>
+                <Button x:Name="connectButton" Margin="0 30 0 0" Foreground="Gray" BorderBrush="Yellow" FontSize="14" Height="40" Content="Login" Background="Yellow">
+                    <Button.Resources>
+                        <Style TargetType="Border">
+                            <Setter Property="CornerRadius" Value="5"/>
+                        </Style>
+                    </Button.Resources>
+                </Button>
+                <TextBlock Visibility="Collapsed" Text="Test" x:Name="infoTBlock"/>
+
+
+            </StackPanel>
+        </Border>
+
+
+    </Grid>
+
+</Window>

@@ -95,7 +95,7 @@ namespace ChatCommunication
                 {
                     Console.WriteLine("A client failed to connect itself to the server, Reason : " + textMsg);
                 }
-                var respToTheClient = new Message(User.GetBotUser(), $"auth status | r:{msg.user.isAuthentified} m:{textMsg.Replace(' ', '_')}");
+                var respToTheClient = new Message(User.GetBotUser(), $"auth status | m:{textMsg.Replace(' ', '_')}");
                 respToTheClient.mustBeParsed = true;
                 respToTheClient.content = connectedUser;
                 Net.SendMsg(comm.GetStream(), respToTheClient);
@@ -127,7 +127,7 @@ namespace ChatCommunication
                     msg = msg.user.AddNewTopic(msg);
                     break;
                 case "list topics":
-                    msg = msg.user.ListTopics();
+                    msg = msg.user.SendTopicsText();
                     break;
                 case "join topic":
                 case "enter topic":
@@ -166,6 +166,12 @@ namespace ChatCommunication
                 case "block user":
                     break;
                 case "help":
+                    break;
+                case "disconnect":
+                case "logoff":
+                case "stop":
+                    msg.user.Disconnect(comm,msg);
+                    msg = null;
                     break;
                 default:
                     string err = "unknown command was entered : " + msg.fullCommand;

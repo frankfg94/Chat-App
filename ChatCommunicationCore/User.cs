@@ -29,6 +29,8 @@ namespace ChatCommunication
 
         public Message CreateTopic(string name, List<User> invitedUsers)
         {
+            lock(name)
+            {
             var topic = new Topic(name);
             topic.users.AddRange(invitedUsers);
             Data.topicList.Add(topic);
@@ -39,17 +41,18 @@ namespace ChatCommunication
             }
             Console.WriteLine($"Topic '{name}' created successfully ");
             return new Message(null,$"The topic '{name}' has been created successfully");
+            }
         }
 
         // Must be used by the server
         public Message GetConversationOfTopic(string name)
         {
+            Topic t = Data.topicList.Find(x => x.Name.Equals(name));
             StringBuilder conversation = new StringBuilder();
             conversation.AppendLine();
-            List<ChatMessage> msgs = Data.topicList.Find(x=>x.Name.Equals(name)).chatMessages;
-                if(msgs.Count > 0)
+                if(t.chatMessages.Count > 0)
                 {
-                    foreach (var msg in msgs)
+                    foreach (var msg in t.chatMessages)
                     {
                         conversation.AppendLine($"[{msg.author.username}] {msg.content} ({msg.date})");
                     }
@@ -59,6 +62,16 @@ namespace ChatCommunication
                     conversation.AppendLine($" >> The conversation is empty for the topic '{name}'");
                 }
                 return new Message(User.GetBotUser(),conversation.ToString());
+            
+        }
+
+        public Message GetTopicObject(string name)
+        {
+            Topic t = Data.topicList.Find(x => x.Name.Equals(name));
+            var msg = new Message(User.GetBotUser(), "rcv topic conv | data");
+            msg.mustBeParsed = true;
+            msg.content = t;
+            return msg;
         }
 
         /// <summary>
@@ -90,7 +103,7 @@ namespace ChatCommunication
         // To find User 2, we use its id
         private void SendMessageToUser(Stream destStream, string username, string msgContent)
         {
-           var users =  User.GetAllUsers();
+           var users = GetAllUsers();
            var destUser = users.Find(u => u.username.Equals(username));
             if (destUser == null)
             {
@@ -104,7 +117,6 @@ namespace ChatCommunication
                     new Message(this, $"rcv user msg | data") { content = chatMsg, mustBeParsed = true});
                 Console.WriteLine("msg sent to user : " + destUser.username);
             }
-           
         }
 
    
@@ -160,14 +172,14 @@ namespace ChatCommunication
             }
         }
 
-        public Message AddNewTopic(Message m, bool authSelf = true)
+        public Message AddNewTopic(Message m, bool autoJoin = true)
         {
             List<CommandArg> commands = m.GetArguments();
 
             List<User> invitedUsernames = new List<User>();
             Console.WriteLine($"'{m.user.username}' wants to create a topic");
 
-            if(authSelf)
+            if(autoJoin)
               invitedUsernames.Add(m.user);
 
             var userList = GetAllUsers();
@@ -182,6 +194,29 @@ namespace ChatCommunication
 
             var topicName = commands.Find(c => c.key == ArgType.NAME).value;
             return CreateTopic(topicName,invitedUsernames);
+        }
+
+        public void Disconnect(TcpClient requester, Message m)
+        {
+            var usToDisconnect = m.user;
+            usToDisconnect.isAuthentified = false;
+            foreach (var userTcp in Data.userClients)
+            {
+                if(userTcp.user.username.Equals(usToDisconnect.username))
+                {
+                    userTcp.user = null;
+                }
+            }
+            foreach (var user in User.userList)
+            {
+                if(user.username.Equals(usToDisconnect.username))
+                {
+                    user.isAuthentified = false;
+                }
+            }
+            Message response = new Message(User.GetBotUser(), "disconnect | data");
+            response.mustBeParsed = true;
+            Net.SendMsg(requester.GetStream(),response);
         }
 
         public void SendAudioMsgToUser(Message msg)
@@ -215,7 +250,8 @@ namespace ChatCommunication
         }
 
 
-        public Message ListTopics()
+
+        public Message SendTopicsText()
         {
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("//////////// List of the Topics ///////////////");
@@ -258,7 +294,7 @@ namespace ChatCommunication
         }
 
         /// <summary>
-        /// Server Side
+        /// Use in the server side to not have to transfer data
         /// </summary>
         /// <param name="topic"></param>
         /// <returns></returns>

@@ -10,7 +10,5 @@ namespace Web_App_Core_Server
         {
             new Server().Start(new IPAddress(new byte[] { 127, 0, 0, 1 }), 8976);
         }
-
-
     }
 }

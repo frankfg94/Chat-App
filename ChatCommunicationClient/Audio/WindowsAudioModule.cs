@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace ChatCommunicationClient
 {
-    public class WindowsModule : ISoundRecorder
+    public class WindowsAudioModule : IAudioModule
     {
         // We use winmm to avoid importing external libraries
         [DllImport("winmm.dll", EntryPoint = "mciSendStringA", CharSet = CharSet.Ansi, SetLastError = true, ExactSpelling = true)]
@@ -32,7 +32,6 @@ namespace ChatCommunicationClient
                 File.WriteAllBytes(tempPath, audioData);
                 Console.WriteLine("Playing audio at "  + tempPath);
                 Process.Start(@"powershell", $@"-c (New-Object Media.SoundPlayer '{tempPath}').PlaySync();");
-                // TODO 
             }
         }
 

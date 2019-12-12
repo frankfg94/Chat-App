@@ -9,9 +9,10 @@ namespace ChatCommunicationClient.Audio
     /// An interface can be useful to provide different implementations, for example an implentation of the audio for linux
     /// one for MacOs and one for Windows
     /// </summary>
-    interface ISoundRecorder
+    interface IAudioModule
     {
         void Record();
+        void StopRecording();
 
         void Play(byte[] audioData);
 

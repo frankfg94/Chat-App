@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace ChatCommunication
 {
@@ -94,6 +95,10 @@ namespace ChatCommunication
         }
 
         List<CommandArg> args;
+
+        /// <summary>
+        /// Indicates if the message has to be parsed by the client or the server after being received or just displayed as an information message
+        /// </summary>
         public bool mustBeParsed = false;
 
         public string GetArgument(string argKey)
@@ -104,7 +109,7 @@ namespace ChatCommunication
             var arg = args.Find(x => x.key == argKey);
             
             if (arg == null)
-                throw new NullReferenceException("Couldn't find the value in the entered command for the following key : " + argKey );
+                throw new InvalidCommandFormatException("Couldn't find the value in the entered command for the following key : " + argKey );
             
             return arg.value ;
         }
