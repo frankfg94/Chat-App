@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace ChatCommunication
 {
@@ -50,7 +51,55 @@ namespace ChatCommunication
         internal List<CommandArg> GetArguments()
         {
             var commands = new List<CommandArg>();
-            var argsTab = ArgsPart.Split(' ');
+            var splittedTab = ArgsPart.Split(' ');
+            string[] argsTab = null;
+
+            if(ArgsPart.Contains("m:"))
+            {
+                int startMessagePos = -1;
+                int endMessagesPos = -1;
+                List<string> messageValue = new List<string>();
+                // To accept long words
+                for (int i = 0; i < splittedTab.Length; i++)
+                {
+                    // We only accept spaced commands for a message type command
+                    if (splittedTab[i].StartsWith("m:"))
+                    {
+                        startMessagePos = i;
+                        messageValue.Add(splittedTab[i]);
+                    }
+                    else if (startMessagePos != -1 && splittedTab[i].Contains(':'))
+                    {
+                        endMessagesPos = i - 1;
+                        break;
+                    }
+                    else if(startMessagePos != -1)
+                    {
+                        messageValue.Add(splittedTab[i]);
+                    }
+                }
+                if(endMessagesPos == -1)
+                    endMessagesPos = splittedTab.Length - 1;
+
+                if (startMessagePos == -1)
+                  argsTab = splittedTab;
+                else
+                {
+                    List<string> cleanedTab = new List<string>();
+
+                    for (int i = 0; i < splittedTab.Length; i++)
+                    {
+                        if(i<startMessagePos || i>endMessagesPos)
+                        cleanedTab.Add(splittedTab[i]);
+                    }
+                    cleanedTab.Insert(startMessagePos,string.Join(" ",messageValue.ToArray()));
+                    argsTab = cleanedTab.ToArray();
+                }
+            }
+            else
+            {
+                argsTab = splittedTab;
+            }
             foreach(var keyValueArg in argsTab)
             {
                 var tab = keyValueArg.Split(":");

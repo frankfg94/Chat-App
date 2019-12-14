@@ -95,7 +95,7 @@ namespace ChatCommunication
                 {
                     Console.WriteLine("A client failed to connect itself to the server, Reason : " + textMsg);
                 }
-                var respToTheClient = new Message(User.GetBotUser(), $"auth status | m:{textMsg.Replace(' ', '_')}");
+                var respToTheClient = new Message(User.GetBotUser(), $"auth status | m:{textMsg}");
                 respToTheClient.mustBeParsed = true;
                 respToTheClient.content = connectedUser;
                 Net.SendMsg(comm.GetStream(), respToTheClient);
@@ -123,8 +123,13 @@ namespace ChatCommunication
         {
             switch (msg.CommandPart)
             {
+                case "sync user list":
+                    SendUsersToAllClients();
+                    msg = null;
+                    break;
                 case "create topic":
-                    msg = msg.user.AddNewTopic(msg);
+                    msg.user.AddNewTopic(msg);
+                    msg = null;
                     break;
                 case "list topics":
                     msg = msg.user.SendTopicsText();
@@ -159,6 +164,14 @@ namespace ChatCommunication
                     msg.user.SendAudioMsgToUser(msg);
                     msg = null;
                     break;
+                case "send audio topic":
+                    msg.user.SendAudioMsgToTopic(msg);
+                    msg = null;
+                    break;
+                case "download topic":
+                    msg.user.SyncTopicForHisClient(comm, msg, msg.GetArgument(ArgType.NAME));
+                    msg = null;
+                    break;
                 case "download topics":
                     msg.user.SyncTopicsForHisClient(comm, msg);
                     msg = null;
@@ -184,6 +197,18 @@ namespace ChatCommunication
             {
                 Net.SendMsg(comm.GetStream(), msg);
             }
+
+        }
+
+        private void SendUsersToAllClients()
+        {
+            Message m = new Message(User.GetBotUser(),"sync user list | data");
+            m.content = User.userList;
+            foreach (var tcpUser in Data.userClients)
+            {
+                Net.SendMsg(tcpUser.tcpClient.GetStream(),m);
+            }
+            Console.WriteLine("Sent user list to all clients");
 
         }
     }

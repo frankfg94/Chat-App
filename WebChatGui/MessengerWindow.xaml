@@ -1,72 +1,93 @@
-﻿<Window x:Class="WebChatGuiClient.MessengerWindow"
+﻿<Window x:Name="window" x:Class="WebChatGuiClient.MessengerWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-        mc:Ignorable="d" WindowStyle="SingleBorderWindow"
-        Title="MessengerWindow"  Height="450" Width="800"
-    xmlns:wpf="clr-namespace:MaterialDesignThemes.Wpf;assembly=MaterialDesignThemes.Wpf">
+        xmlns:local="clr-namespace:ChatCommunication;assembly=ChatCommunicationCore"
+        mc:Ignorable="d"
+        Height="450" Width="800"
+        WindowStyle="SingleBorderWindow"
+        xmlns:wpf="clr-namespace:MaterialDesignThemes.Wpf;assembly=MaterialDesignThemes.Wpf" Background="White">
+    <Window.Resources>
+        <Storyboard x:Key="DeZoomAnim">
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="window" Storyboard.TargetProperty="(FrameworkElement.Height)">
+                <EasingDoubleKeyFrame KeyTime="00:00:00" Value="450"/>
+                <EasingDoubleKeyFrame KeyTime="00:00:00.4000000" Value="163"/>
+            </DoubleAnimationUsingKeyFrames>
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="window" Storyboard.TargetProperty="(FrameworkElement.Width)">
+                <EasingDoubleKeyFrame KeyTime="00:00:00" Value="800"/>
+                <EasingDoubleKeyFrame KeyTime="00:00:00.4000000" Value="243"/>
+            </DoubleAnimationUsingKeyFrames>
+            <ColorAnimationUsingKeyFrames Storyboard.TargetName="window" Storyboard.TargetProperty="(Control.Background).(SolidColorBrush.Color)">
+                <EasingColorKeyFrame KeyTime="00:00:00" Value="White"/>
+                <EasingColorKeyFrame KeyTime="00:00:00.4000000" Value="#F9FFFFFF"/>
+            </ColorAnimationUsingKeyFrames>
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="window" Storyboard.TargetProperty="(UIElement.Opacity)">
+                <EasingDoubleKeyFrame KeyTime="00:00:00" Value="1"/>
+                <EasingDoubleKeyFrame KeyTime="00:00:00.4000000" Value="0"/>
+            </DoubleAnimationUsingKeyFrames>
+        </Storyboard>
+    </Window.Resources>
 
 
     <Grid MouseDown="Grid_MouseDown">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
             <RowDefinition Height="2*"/>
-            <RowDefinition Height="3*"/>
+            <RowDefinition Height="2*"/>
+            <RowDefinition />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition MinWidth="130" Width="*"/>
             <ColumnDefinition  Width="3*"/>
         </Grid.ColumnDefinitions>
-        <GridSplitter Width="1" Background="Gray" Grid.Column="1" HorizontalAlignment="Left" Grid.RowSpan="3"/>
+        <GridSplitter Width="1" Background="Gray" Grid.Column="1" HorizontalAlignment="Left" Grid.RowSpan="4"/>
 
         <DockPanel Margin="15" Grid.Column="0" Grid.Row="0">
-            <Rectangle Height="35" Width="35" Fill="Black"/>
-            <TextBlock Margin="10 0 0 0" VerticalAlignment="Center" Text="Welcome username" TextWrapping="Wrap"/>
+            <Image x:Name="profileImg" Height="35" Width="35" />
+            <TextBlock x:Name="welcomeTblock" Margin="10 0 0 0" VerticalAlignment="Center"  Text="Welcome username" TextWrapping="Wrap"/>
         </DockPanel>
         <StackPanel  Grid.Row="1">
             <Label MinWidth="100" x:Name="convLabel" MouseEnter="convLabel_MouseEnter" MouseLeave="convLabel_MouseLeave" MouseLeftButtonDown="convLabel_MouseLeftButtonDown" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" >
-                <Label.Content>
-                    <DockPanel >
-                        <materialDesign:PackIcon Kind="Chat"/>
-                        <TextBlock Margin="5 0 0 0" Text="Conversations"/>
-                    </DockPanel>
-                </Label.Content>
+                <DockPanel >
+                    <wpf:PackIcon Kind="Chat"/>
+                    <TextBlock Margin="5 0 0 0" Text="Conversations"/>
+                </DockPanel>
             </Label>
-            <ListBox x:Name="convListbox" Grid.Column="0" Grid.RowSpan="2">
+            <ListBox x:Name="convListbox" Grid.Column="0" Grid.RowSpan="2" PreviewMouseDown="ListBoxItem_PreviewMouseLeftButtonDown">
                 <ListBox.ItemTemplate>
-                    <!-- Custom display for an item-->
                     <DataTemplate>
                         <DockPanel>
-                            <TextBlock  FontWeight="Bold" Text="{Binding FirstLetter}" Foreground="Violet"/>
-                            <TextBlock Margin="10 0 0 0" VerticalAlignment="Center" Text="{Binding ElementName=Name}"/>
+                            <TextBlock Margin="10 0 0 0" VerticalAlignment="Center" Text="{Binding Name}"/>
+                            <TextBlock Margin="5 0 0 0" VerticalAlignment="Center" Text="{Binding addInfos}" />
                         </DockPanel>
                     </DataTemplate>
-
                 </ListBox.ItemTemplate>
                 <ListBoxItem Content="Topic1"/>
-                <ListBoxItem Content="Topic 2"/>
+                <ListBoxItem Content="Topic 2" />
                 <ListBoxItem Content="Topic 3"/>
 
             </ListBox>
         </StackPanel>
         <StackPanel  Grid.Row="2">
             <Label MouseEnter="usersLabel_MouseEnter" MouseLeave="usersLabel_MouseLeave" x:Name="usersLabel" MouseLeftButtonDown="usersLabel_MouseLeftButtonDown" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
-                <Label.Content>
-                    <DockPanel >
-                        <materialDesign:PackIcon Kind="User"/>
-                        <TextBlock  Margin="5 0 0 0" Text="Users"/>
-                    </DockPanel>
-                </Label.Content>
+                <DockPanel >
+                    <wpf:PackIcon Kind="User"/>
+                    <TextBlock  Margin="5 0 0 0" Text="Users"/>
+                </DockPanel>
             </Label>
-            <ListBox x:Name="usersListbox" Grid.Column="0" Grid.Row="1">
+            <ListBox x:Name="usersListbox" Grid.Column="0" Grid.Row="1" PreviewMouseDown="usersListbox_PreviewMouseDown">
                 <ListBox.ItemTemplate>
-                    <DataTemplate>
+                    <DataTemplate DataType="{x:Type local:User}">
                         <DockPanel>
-                            <Ellipse Name="ellipse" Margin="5" DockPanel.Dock="Left" Style="{DynamicResource elstyle}">
+                            <Ellipse HorizontalAlignment="Left"  Width="25" Height="25">
+                                <Ellipse.Fill>
+                                    <ImageBrush  ImageSource="{Binding ImgData}"/>
+                                </Ellipse.Fill>
                             </Ellipse>
-                            <TextBlock Text="{Binding Name}"></TextBlock>
+                            <TextBlock Margin="10 0 0 0" VerticalAlignment="Center"  Text="{Binding username}"/>
+                            <TextBlock Margin="5 0 0 0" VerticalAlignment="Center" Foreground="Gray" Text="{Binding addInfos}"/>
                         </DockPanel>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
@@ -76,27 +97,55 @@
             </ListBox>
         </StackPanel>
         <!--<Rectangle Fill="Gray" Grid.Column="0" HorizontalAlignment="Right" Width="1" Grid.RowSpan="3"/>-->
-
-        <Grid Grid.Column="1" Grid.Row="0" Grid.RowSpan="3" >
+            <Button Grid.Row="3" Margin="10" x:Name="createNewTopicBut" Click="createNewTopicBut_Click" BorderThickness="0" BorderBrush="{x:Null}" Foreground="Gray" Background="{x:Null}" Content="New Topic"/>
+        
+        <Grid Grid.Column="1" Grid.Row="0" Grid.RowSpan="4" >
             <Grid.RowDefinitions>
                 <RowDefinition Height="13*"/>
                 <RowDefinition Height="80*"/>
                 <RowDefinition Height="10*"/>
             </Grid.RowDefinitions>
             <StackPanel Grid.Row="0">
-                <StackPanel Orientation="Horizontal">
+                <DockPanel >
                     <Rectangle Fill="Black" Margin="10" Height="30" Width="30"/>
-                    <TextBlock VerticalAlignment="Center" Text="This is the name of the conversation / User"/>
-                </StackPanel>
+                    <Viewbox HorizontalAlignment="Center" Grid.Row="1" VerticalAlignment="Center" Height="50">
+                        <TextBlock Margin="8"  FontFamily="Cordia New" Foreground="Gray" x:Name="headerConversationNameTblock" VerticalAlignment="Center" Text="This is the name of the conversation / User"/>
+                    </Viewbox>
+                    <ToggleButton x:Name="toggleButtonCardConversation" Style="{StaticResource MaterialDesignFlatToggleButton}" HorizontalAlignment="Right" Margin="0 0 20 0">
+                        <materialDesign:PackIcon
+                            Kind="InfoOutline"
+                            Height="21"
+                            Width="21" />       
+                    </ToggleButton>
+                </DockPanel>
                 <Separator/>
             </StackPanel>
-            <ListBox x:Name="messageTextbox" Grid.Row="1" Background="LightGray" Margin="10"/>
-            <DockPanel x:Name="chatPanel" Grid.Row="2">
+                <ListBox  x:Name="messageListbox" Grid.Row="1" Background="LightGray" Margin="10">
+                   
+                <ItemsControl.Resources>
+                        <DataTemplate DataType="{x:Type local:ChatMessage}">
+                            <Grid HorizontalAlignment="Stretch" >
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="10*" />
+                                    <ColumnDefinition Width="1*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0"  Orientation="Vertical">
+                                    <Image Width="30" Height="30" Source="{Binding Path=author.ImgData}"/>
+                                    <TextBlock Text="{Binding author.username}"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" VerticalAlignment="Center" FontSize="16" Margin="20 0 0 0" Text="{Binding content}"/>
+                                <TextBlock Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="2 0 0 0" FontFamily="Shruti" FontSize="12" Text="{Binding ShortTimeString}"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.Resources>
+                </ListBox>
+            <DockPanel IsEnabled="False" x:Name="chatPanel" Grid.Row="2">
                 <StackPanel Margin=" 20 0 0 0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" >
-                    <Button x:Name="sendFileButton" Foreground="DarkSlateGray" Height="35" Width="35"  BorderBrush="{x:Null}" Background="LightBlue" 
+                    <Button Click="sendFileButton_Click" x:Name="sendFileButton" Foreground="DarkSlateGray" Height="35" Width="35"  BorderBrush="{x:Null}" Background="LightBlue" 
                            MouseEnter="Button_MouseEnter" MouseLeave="Button_MouseLeave"
                             Style="{StaticResource MaterialDesignFloatingActionButton}">
-                        <materialDesign:PackIcon
+                        <wpf:PackIcon
                                 Kind="FileOutline"
                                 MinWidth="24"
                                 MinHeight="24"
@@ -104,23 +153,55 @@
                     </Button>
                     <Button x:Name="sendAudioButton" Foreground="DarkSlateGray" Margin="5 0 0 0" BorderThickness="1" Height="35" Width="35" BorderBrush="{x:Null}" Background="LightBlue" 
                            MouseEnter="Button_MouseEnter" MouseLeave="Button_MouseLeave"
-                            Style="{StaticResource MaterialDesignFloatingActionButton}" >
-                        <materialDesign:PackIcon
+                            Style="{StaticResource MaterialDesignFloatingActionButton}" Cursor="Hand" Click="sendAudioButton_Click" >
+                        <wpf:PackIcon
                                 Kind="Microphone"
                                 MinWidth="24"
                                 MinHeight="24"
                                 />
                     </Button>
                 </StackPanel>
-                <TextBox x:Name="msgTbox"
+                <TextBox x:Name="msgTbox" PreviewKeyDown="SendMessageOnEnterPress"
                     VerticalAlignment="Stretch"
                          MaxHeight="30"
                     Margin="7"
                     TextWrapping="Wrap"
                     MinWidth="100"
-                    VerticalScrollBarVisibility="Auto">
-                </TextBox>
+                    VerticalScrollBarVisibility="Auto"/>
             </DockPanel>
+            <materialDesign:Card Width="500" Height="230" x:Name="topicCard" Margin="50" Grid.Row="1" Grid.Column="1" >
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="1*" />
+                        <RowDefinition Height="1*" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="1*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Margin="20" Grid.RowSpan="2">
+                        <TextBlock x:Name="topicNameTblock" Text="Topic Name" FontSize="22" Foreground="Gray" FontWeight="DemiBold"/>
+                        <TextBlock x:Name="topicDescrTblock" Foreground="Gray" Margin="10" Text="No description has been given for this topic"/>
+                        <TextBlock x:Name="topicUsCountTblock" Foreground="Gray" Margin="10" Text="1 user is on this topic"/>
+                        <ItemsControl x:Name="userTopicsItemsControl" MinHeight="30">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type local:User}">
+                                    <StackPanel Margin="5" Orientation="Horizontal">
+                                        <Ellipse Width="30" Height="30">
+                                            <Ellipse.Fill>
+                                                <ImageBrush ImageSource="{Binding ImgData}" />
+                                            </Ellipse.Fill>
+                                        </Ellipse>
+                                        <TextBlock Foreground="Gray" FontSize="10" Text="{Binding username}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                    <Image Grid.Column="1" Grid.RowSpan="2" Source="https://icon-library.net/images/group-chat-icon/group-chat-icon-19.jpg" />
+                    <Button  Grid.Row="1" Grid.ColumnSpan="2" x:Name="joinTopicBut" Content="Join this Topic" VerticalAlignment="Bottom" Margin="20" MinWidth="200" Style="{StaticResource MaterialDesignFlatAccentBgButton}" Cursor="Hand" Click="joinTopicBut_Click"/>
+                </Grid>
+            </materialDesign:Card>
         </Grid>
     </Grid>
 </Window>

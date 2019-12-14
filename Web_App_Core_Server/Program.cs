@@ -1,5 +1,6 @@
 ﻿using ChatCommunication;
 using System;
+using System.Collections.Generic;
 using System.Net;
 
 namespace Web_App_Core_Server
@@ -8,7 +9,15 @@ namespace Web_App_Core_Server
     {
         static void Main(string[] args)
         {
-            new Server().Start(new IPAddress(new byte[] { 127, 0, 0, 1 }), 8976);
+            var server = new Server();
+            var userList = new List<User>()
+            {
+                new GuiUser("Marc","m"){ImgData = Properties.Resources.Marc },
+                new GuiUser("François","123") { ImgData = Properties.Resources.Francois},
+                new GuiUser("Marine", "Marine") { ImgData = Properties.Resources.Marine}
+            };
+            User.userList = userList;
+            server.Start(new IPAddress(new byte[] { 127, 0, 0, 1 }), 8976);
         }
     }
 }

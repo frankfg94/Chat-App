@@ -14,3 +14,5 @@ C:\Users\franc\source\repos\Web_App_Core\Web_App_Core_Server\obj\Debug\netcoreap
 C:\Users\franc\source\repos\Web_App_Core\Web_App_Core_Server\obj\Debug\netcoreapp3.0\Web_App_Core_Server.pdb
 C:\Users\franc\source\repos\Web_App_Core\Web_App_Core_Server\bin\Debug\netcoreapp3.0\ChatCommunicationCore.dll
 C:\Users\franc\source\repos\Web_App_Core\Web_App_Core_Server\bin\Debug\netcoreapp3.0\ChatCommunicationCore.pdb
+C:\Users\franc\source\repos\Web_App_Core\Web_App_Core_Server\obj\Debug\netcoreapp3.0\Web_App_Core_Server.Properties.Resources.resources
+C:\Users\franc\source\repos\Web_App_Core\Web_App_Core_Server\obj\Debug\netcoreapp3.0\Web_App_Core_Server.csproj.GenerateResource.cache

@@ -6,8 +6,8 @@ namespace ChatCommunication
     public class ChatMessage
     {
         public DateTime date;
-        public User author;
-        public string content;
+        public User author { get; set; }
+        public string content { get; set; }
 
         public ChatMessage(DateTime date, User author, string content)
         {
@@ -15,6 +15,8 @@ namespace ChatCommunication
             this.author = author;
             this.content = content;
         }
+
+        public string ShortTimeString => date.ToShortTimeString();
 
         public override string ToString()
         {

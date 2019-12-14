@@ -18,9 +18,11 @@ namespace ChatCommunication
 
         public static Message RcvMsg(Stream s)
         {
-
+            lock(s)
+            {
                 BinaryFormatter bf = new BinaryFormatter();
                 return (Message)bf.Deserialize(s);
+            }
         }
 
     }

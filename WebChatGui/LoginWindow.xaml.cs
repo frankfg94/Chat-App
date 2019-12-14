@@ -35,6 +35,7 @@ namespace WebChatGui
             InitializeComponent();
             connectButton.Click += ConnectButton_Click;
             this.Loaded += LoginWindow_Loaded;
+            
         }
 
         private void LoginWindow_Loaded(object sender, RoutedEventArgs e)
@@ -70,7 +71,7 @@ namespace WebChatGui
             string message = msg.GetArgument(ArgType.MESSAGE);
             bool isSuccess = msg.content as User != null;
             
-            var displayMsg = "Credentials are validated for this user : " + message.Replace("_", " ");
+            var displayMsg = "Credentials are validated for this user : " + message;
             var msgColor = Brushes.Green;
             if (isSuccess)
             {
@@ -80,10 +81,11 @@ namespace WebChatGui
                     t.Elapsed += T_Elapsed;
                     t.AutoReset = false;
                     t.Start();
+
             }
             else
             {
-                displayMsg = "Credentials are wrong for this user :" + message.Replace("_", " ");
+                displayMsg = "Credentials are wrong for this user :" + message;
                 msgColor = Brushes.Red;
             }
 
@@ -106,7 +108,7 @@ namespace WebChatGui
         {
             Dispatcher.BeginInvoke(new Action(() =>
             {
-                new MessengerWindow(comm).Show();
+                new MessengerWindow(comm,curUser).Show();
                 Close();
             }));
         }

@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:WebChatGui"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d" Background="Transparent" WindowStyle="None"
-        Title="MainWindow" AllowsTransparency="True" Height="450" Width="800">
+        Title="MainWindow" AllowsTransparency="True" Height="450" Width="800" Cursor="Hand">
 
     
 
@@ -39,7 +39,7 @@
                         </Style>
                     </Button.Resources>
                 </Button>
-                <TextBlock Visibility="Collapsed" Text="Test" x:Name="infoTBlock"/>
+                <TextBlock Visibility="Collapsed" Text="Test" x:Name="infoTBlock" Cursor="Hand"/>
 
 
             </StackPanel>

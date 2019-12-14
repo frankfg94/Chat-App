@@ -18,10 +18,8 @@ namespace ChatCommunication
         private const bool DEBUG_SHOW_RCV_COMMANDS = false;
 
         IAudioModule audioModule;
-
         User curUser = new User("guest", "guest");
         TcpClient comm;
-
         Thread commandThread;
 
 
@@ -201,7 +199,7 @@ namespace ChatCommunication
                         break;
                     case "rcv user msg":
                         var chatMsgPrivate = msg.content as ChatMessage;
-                        HandleMsg(chatMsgPrivate);
+                        AddMsgUser(chatMsgPrivate);
                         break;
                     case "auth status":
                         DisplayAuthentificationResult(msg);
@@ -212,7 +210,7 @@ namespace ChatCommunication
                         AddMsgTopic(topicName,content);
                         break;
                     case "sync topics":
-                        DownloadTopics(msg);
+                        DisplayTopics(msg);
                         break;
                     case "disconnect":
                         DisconnectSuccess();
@@ -254,10 +252,7 @@ namespace ChatCommunication
             Console.WriteLine("File downloaded to : " + path);
         }
 
-        public void SendFileToUser(string username)
-        {
-            throw new NotImplementedException();
-        }
+
 
         public void ConfigureFileToSend(Message msgToSend)
         {
@@ -301,7 +296,7 @@ namespace ChatCommunication
             }
         }
 
-        public void HandleMsg(ChatMessage msg)
+        public void AddMsgUser(ChatMessage msg)
         {
             Console.WriteLine(Environment.NewLine + msg);
         }
@@ -342,10 +337,15 @@ namespace ChatCommunication
             Console.WriteLine($"[{topicName}]" + msg);
         }
 
-        public void DownloadTopics(Message msg)
+        public void DisplayTopics(Message msg)
         {
             Data.topicList = msg.content as List<Topic>;
             Console.WriteLine("Sync of topics is a success!");
+        }
+        public void SyncUserList(User senderOfCommand)
+        {
+            Net.SendMsg(comm.GetStream(), new Message(senderOfCommand, "sync user list | data") { mustBeParsed = true });
+            Console.WriteLine("Sent sync request (Users)");
         }
 
         public void DisplayAuthentificationResult(Message m)
@@ -356,10 +356,11 @@ namespace ChatCommunication
             {
                 curUser = m.content as User;
                 curUser.isAuthentified = true;
-                Console.WriteLine("Credentials are validated for this user : " + message.Replace("_", " "));
+                Console.WriteLine("Credentials are validated for this user : " + message);
+                SyncUserList(curUser);
             }
             else
-                Console.WriteLine("Credentials are wrong for this user :" + message.Replace("_", " "));
+                Console.WriteLine("Credentials are wrong for this user :" + message);
         }
     }
 }

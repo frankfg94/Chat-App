@@ -1,25 +1,52 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace ChatCommunication
 {
     [Serializable]
-    public class User
+    public class User : INotifyPropertyChanged
     {
-        public string username;
+        private byte[] imgData;
+        public byte[] ImgData
+        {
+            get { return imgData; }
+            set
+            {
+                if (value != imgData)
+                {
+                    imgData = value;
+                }
+            }
+        }
+
+        public string username { get; set; }
+        private string infos = string.Empty;
+
+        public string addInfos
+        {
+            get { return infos; }
+            set
+            {
+                infos = value;
+                // We indicate that we want to sync the UI
+                NotifyPropertyChanged();
+            }
+        }
+        private void NotifyPropertyChanged([CallerMemberName] string propertyName = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
         public string password;
         readonly int id = 0;
         public static int idUser = 0;
         public bool isAuthentified = false;
-
-        /// <summary>
-        /// The current topic an user is in
-        /// </summary>
-        Topic currentTopic = null;
 
         public User(string login, string password)
         {
@@ -27,20 +54,38 @@ namespace ChatCommunication
             this.password = password;
         }
 
-        public Message CreateTopic(string name, List<User> invitedUsers)
+        public void CreateTopic(string name, List<User> invitedUsers, TcpClient creatorComm = null)
         {
             lock(name)
             {
-            var topic = new Topic(name);
-            topic.users.AddRange(invitedUsers);
-            Data.topicList.Add(topic);
-            Console.WriteLine("> User list on this new server : ");
-            foreach (var u in topic.users)
-            {
-                Console.WriteLine("User : " + u.username);
+                var topic = new Topic(name);
+                topic.users.AddRange(invitedUsers);
+                Data.topicList.Add(topic);
+                Console.WriteLine($"Topic '{name}' created successfully ");
+                Console.WriteLine("> Sending the topic to each user : ");
+                if(creatorComm != null)
+                      Net.SendMsg(creatorComm.GetStream(), new Message(User.GetBotUser(), $"Your topic '{name}' has been created successfully"));
+                foreach (var u in Data.userClients)
+                {
+                    Net.SendMsg(u.tcpClient.GetStream(), new Message(User.GetBotUser(), $"sync topic | data") {mustBeParsed = true, content = topic });
+                    Console.WriteLine("Sent to : " + u.user.username);
+                }
             }
-            Console.WriteLine($"Topic '{name}' created successfully ");
-            return new Message(null,$"The topic '{name}' has been created successfully");
+        }
+
+        public void CreateTopicAndNotifyAll(string name, List<User> invitedUsers)
+        {
+            lock (name)
+            {
+                var topic = new Topic(name);
+                topic.users.AddRange(invitedUsers);
+                Data.topicList.Add(topic);
+                Console.WriteLine("> User list on this new server : ");
+                foreach (var u in Data.userClients)
+                {
+                    Net.SendMsg(u.tcpClient.GetStream(),new Message(User.GetBotUser(),"rcv new topic | data"));
+                }
+                Console.WriteLine($"Topic '{name}' created successfully ");
             }
         }
 
@@ -85,6 +130,14 @@ namespace ChatCommunication
             msg.content = Data.topicList;
             msg.mustBeParsed = true;
             Net.SendMsg(client.GetStream(),msg);
+        }
+
+        public void SyncTopicForHisClient(TcpClient comm, Message msg, string topicName)
+        {
+            msg.fullCommand = $"sync topic | n:{topicName}";
+            msg.content = Data.topicList.Find(x=>x.Name.Equals(topicName));
+            msg.mustBeParsed = true;
+            Net.SendMsg(comm.GetStream(), msg);
         }
 
         private static User bot = new User("Bot","bot");
@@ -152,7 +205,7 @@ namespace ChatCommunication
             Console.WriteLine("File sent to the user "+ destUsername +" with a byte array : " + nameWithFormat);
         }
 
-
+       
         public void SendFileInTopic(Message msg)
         {
             SendFileInTopic(msg.GetArgument(ArgType.NAME), msg.GetArgument(ArgType.FILENAME_WITH_FORMAT), msg.content as byte[]);
@@ -172,7 +225,7 @@ namespace ChatCommunication
             }
         }
 
-        public Message AddNewTopic(Message m, bool autoJoin = true)
+        public void AddNewTopic(Message m, bool autoJoin = true)
         {
             List<CommandArg> commands = m.GetArguments();
 
@@ -192,8 +245,9 @@ namespace ChatCommunication
                 }
             }
 
-            var topicName = commands.Find(c => c.key == ArgType.NAME).value;
-            return CreateTopic(topicName,invitedUsernames);
+           var topicName = commands.Find(c => c.key == ArgType.NAME).value;
+           var creatorTcp = Data.RetrieveClientFromUsername(m.user.username);
+           CreateTopic(topicName,invitedUsernames, creatorTcp );
         }
 
         public void Disconnect(TcpClient requester, Message m)
@@ -219,6 +273,18 @@ namespace ChatCommunication
             Net.SendMsg(requester.GetStream(),response);
         }
 
+        public void SendAudioMsgToTopic(Message msg)
+        {
+            var destTopicName = msg.GetArgument(ArgType.NAME);
+            var audioData = msg.content as byte[];
+            var topic = Data.topicList.Find(x=>x.Name.Equals(destTopicName));
+            foreach (var user in topic.users)
+            {
+                SendAudioMsgToUser(user.username,audioData);
+            }
+        }
+
+
         public void SendAudioMsgToUser(Message msg)
         {
             var destUsername = msg.GetArgument(ArgType.USERNAME);
@@ -235,6 +301,8 @@ namespace ChatCommunication
         }
 
         public static List<User> userList;
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public static List<User> GetAllUsers()
         {
@@ -310,7 +378,6 @@ namespace ChatCommunication
             {
                 return new Message(this, "You have already joined this topic") { mustBeParsed = false};
             }
-
         }
 
         public void SendMessageInTopic(string name, string content)
