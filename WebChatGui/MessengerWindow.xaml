@@ -50,7 +50,7 @@
         </DockPanel>
         <StackPanel  Grid.Row="1">
             <Label MinWidth="100" x:Name="convLabel" MouseEnter="convLabel_MouseEnter" MouseLeave="convLabel_MouseLeave" MouseLeftButtonDown="convLabel_MouseLeftButtonDown" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" >
-                <DockPanel >
+                <DockPanel>
                     <wpf:PackIcon Kind="Chat"/>
                     <TextBlock Margin="5 0 0 0" Text="Conversations"/>
                 </DockPanel>
@@ -121,7 +121,7 @@
                 </DockPanel>
                 <Separator/>
             </StackPanel>
-                <ListBox  x:Name="messageListbox" Grid.Row="1" Background="WhiteSmoke" Margin="10">
+                <ListBox x:Name="messageListbox" Grid.Row="1" Background="WhiteSmoke" Margin="10">
                 <ItemsControl.Resources>
                         <DataTemplate DataType="{x:Type local:ChatMessage}">
                             <Grid HorizontalAlignment="Stretch" >

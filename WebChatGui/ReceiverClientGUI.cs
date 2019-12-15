@@ -260,6 +260,17 @@ namespace WebChatGuiClient
                 {
                     window.convListbox.Items.Add(t);
                 }
+
+                // Clean the topic message list if we are in it
+                if(window.curTopic != null && window.curTopic.Name.Equals(window.headerConversationNameTblock.Tag))
+                {
+                    window.messageListbox.Items.Clear();
+                    window.editConvButton.IsEnabled = false;
+                    window.headerConversationNameTblock.Text = "This topic was deleted";
+                    window.chatPanel.IsEnabled = false;
+                    // We reset the tag
+                    window.headerConversationNameTblock.Tag = null;
+                }
             }));
 
         }
@@ -392,6 +403,10 @@ namespace WebChatGuiClient
                 if(window.curTopic == null || window.curTopic.Name.Equals(topic.Name))
                 {
                     window.headerConversationNameTblock.Text = topic.Name;
+
+                    // Setting the tag allows us to remember when to remove the messages of the deleted topic that we are observing
+                    window.headerConversationNameTblock.Tag = topic.Name;
+
                     if (topic.Description != null)
                         window.headerConversationNameTblock.Text += " / " + topic.Description;
 
@@ -416,7 +431,7 @@ namespace WebChatGuiClient
                 window.editConvButton.IsEnabled = false;
                 // We only clear the screen if we already are in this topic
                 window.headerConversationNameTblock.Text = curChatter.username;
-                    window.messageListbox.Items.Clear();
+                window.messageListbox.Items.Clear();
 
                     foreach (var msg in window.privateMessages)
                     {
