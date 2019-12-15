@@ -85,25 +85,24 @@ namespace WebChatGuiClient
         {
             if (!appIsClosable)
             {
-            // AutoDisconnect when closing the window
-            Net.SendMsg(serverComm.GetStream(), new Message(curUser, "disconnect | data") { mustBeParsed = true });
-            if(clientActions == null)
-            {
-                clientActions = new ReceiverClientGUI(serverComm, this);
-            }
-            clientActions.SyncUserList(curUser);
-            curUser = null;
-            sb = this.FindResource("DeZoomAnim") as Storyboard;
-            Storyboard.SetTarget(sb, this);
-            sb.Completed += Sb_Completed;
-            sb.Begin();
-            e.Cancel = true;
-            }
-            else
-            {
-                e.Cancel = false;
-            }
-
+                // AutoDisconnect when closing the window
+                Net.SendMsg(serverComm.GetStream(), new Message(curUser, "disconnect | data") { mustBeParsed = true });
+                if(clientActions == null)
+                {
+                    clientActions = new ReceiverClientGUI(serverComm, this);
+                }
+                clientActions.SyncUserList(curUser);
+                curUser = null;
+                sb = this.FindResource("DeZoomAnim") as Storyboard;
+                Storyboard.SetTarget(sb, this);
+                sb.Completed += Sb_Completed;
+                sb.Begin();
+                e.Cancel = true;
+                }
+                else
+                {
+                    e.Cancel = false;
+                }
         }
 
         private void Sb_Completed(object sender, EventArgs e)
@@ -280,6 +279,7 @@ namespace WebChatGuiClient
             }));
         }
 
+        // When you press the Enter key in the textbar
         private void SendMessageOnEnterPress(object sender, KeyEventArgs e)
         {
             if(e.Key == Key.Enter)
@@ -296,8 +296,11 @@ namespace WebChatGuiClient
                         else if (curChatter != null)
                         {
                             Net.SendMsg(serverComm.GetStream(), new Message(curUser, $"msg user | u:{curChatter.username} m:{(sender as TextBox).Text}"));
-                            messageListbox.Items.Add(new ChatMessage(DateTime.Now, curUser, curChatter.username ,(sender as TextBox).Text));
-                            privateMessages.Add(new ChatMessage(DateTime.Now,curUser,curChatter.username,(sender as TextBox).Text));
+                            if(!curChatter.username.Equals(curUser.username))
+                            {
+                                messageListbox.Items.Add(new ChatMessage(DateTime.Now, curUser, curChatter.username ,(sender as TextBox).Text));
+                                privateMessages.Add(new ChatMessage(DateTime.Now,curUser,curChatter.username,(sender as TextBox).Text));
+                            }
                             (sender as TextBox).Text = string.Empty;
                         }
                     }
@@ -317,14 +320,12 @@ namespace WebChatGuiClient
                     curTopic.users.Add(curUser);
                     topicCard.Visibility = Visibility.Collapsed;
                     chatPanel.IsEnabled = true;
+                    msgTbox.Focus();
                 }));
             }
         }
 
-        private void createNewTopicBut_Click(object sender, RoutedEventArgs e)
-        {
 
-        }
 
         private void sendAudioButton_Click(object sender, RoutedEventArgs e)
         {
@@ -362,8 +363,8 @@ namespace WebChatGuiClient
             Net.SendMsg(serverComm.GetStream(), m);
         }
 
-
-        private void ListBoxItem_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        // When we click on of the users
+        private void UserListBoxItem_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             var item = ItemsControl.ContainerFromElement(sender as ListBox, e.OriginalSource as DependencyObject) as ListBoxItem;
 
@@ -392,6 +393,7 @@ namespace WebChatGuiClient
                 {
                     topicCard.Visibility = Visibility.Collapsed;
                     chatPanel.IsEnabled = true;
+                    msgTbox.Focus();
                 }
                 clientActions.DisplayTopicChat(item.Content as Topic);
             }
@@ -410,6 +412,18 @@ namespace WebChatGuiClient
                 curChatter = lboxItem.Content as User;
                 clientActions.DisplayUserChat(curChatter);
             }
+        }
+
+        private void createNewTopicBut_Click(object sender, RoutedEventArgs e)
+        {
+            new TopicWindow(serverComm).Show();
+        }
+
+        
+        private void editConvButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (curTopic != null)
+                new TopicWindow(serverComm,curTopic).ShowDialog();
         }
     }
           

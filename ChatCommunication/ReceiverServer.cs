@@ -131,6 +131,14 @@ namespace ChatCommunication
                     msg.author.AddNewTopic(msg);
                     msg = null;
                     break;
+                case "delete topic":
+                    msg.author.DeleteTopic(msg);
+                    msg = null;
+                    break;
+                case "update topic":
+                    msg.author.UpdateTopic(msg);
+                    msg = null;
+                    break;
                 case "list topics":
                     msg = msg.author.SendTopicsText();
                     break;

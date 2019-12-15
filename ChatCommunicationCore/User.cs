@@ -41,12 +41,14 @@ namespace ChatCommunication
             this.password = password;
         }
 
-        public void CreateTopic(string name, List<User> invitedUsers, TcpClient creatorComm = null)
+        public void CreateTopic(string name, string description, List<User> invitedUsers, TcpClient creatorComm = null)
         {
             lock(name)
             {
                 var topic = new Topic(name);
                 topic.users.AddRange(invitedUsers);
+                if (description != null)
+                    topic.Description = description;
                 Data.topicList.Add(topic);
                 Console.WriteLine($"Topic '{name}' created successfully ");
                 Console.WriteLine("> Sending the topic to each user : ");
@@ -113,7 +115,7 @@ namespace ChatCommunication
         /// <param name="msg"></param>
         public void SyncTopicsForHisClient(TcpClient client,Message msg)
         {
-            msg.fullCommand = "sync topics | dqdqsd";
+            msg.fullCommand = "sync topics | data";
             msg.content = Data.topicList;
             msg.mustBeParsed = true;
             Net.SendMsg(client.GetStream(),msg);
@@ -159,7 +161,38 @@ namespace ChatCommunication
             }
         }
 
-   
+        public void UpdateTopic(Message msg)
+        {
+            var topicName = msg.GetArgument(ArgType.NAME);
+            var topicToEdit = Data.topicList.Find(x => x.Name.Equals(topicName));
+            topicToEdit.Name = msg.GetArgument(ArgType.NEW_NAME);
+            topicToEdit.Description = msg.GetArgument(ArgType.DESCRIPTION);
+
+            foreach (var tcpUser in Data.userClients)
+            {
+                Net.SendMsg(tcpUser.tcpClient.GetStream(),
+                    new Message(GetBotUser(),$"sync topic | n:{topicName} ") { mustBeParsed = true, content = topicToEdit }) ;
+            }
+        }
+
+        public void DeleteTopic(Message msg)
+        {
+          var topicName = msg.GetArgument(ArgType.NAME);
+          Data.topicList.RemoveAll(x => x.Name.Equals(topicName));
+
+        // Synchronize all the clients to remove the topic
+         var resp = new Message(GetBotUser(),"sync topics | data");
+         resp.content = Data.topicList;
+         resp.mustBeParsed = true;
+         foreach (var tcpUser in Data.userClients)
+         {
+                Net.SendMsg(tcpUser.tcpClient.GetStream(), resp);
+         }
+         Console.WriteLine("topic deleted, topics synced with clients");
+
+        }
+
+
 
         /// <summary>
         /// Return the user that represents the server
@@ -214,7 +247,6 @@ namespace ChatCommunication
 
         public void AddNewTopic(Message m, bool autoJoin = true)
         {
-            List<CommandArg> commands = m.GetArguments();
 
             List<User> invitedUsernames = new List<User>();
             Console.WriteLine($"'{m.author.username}' wants to create a topic");
@@ -222,19 +254,10 @@ namespace ChatCommunication
             if(autoJoin)
               invitedUsernames.Add(m.author);
 
-            var userList = GetAllUsers();
-            foreach (CommandArg arg in commands)
-            {
-                if(arg.key == ArgType.USERNAME)
-                {
-                    // We verify that the user exist
-                    invitedUsernames.Add(userList.Find(x => x.username.Equals(arg.value)));
-                }
-            }
-
-           var topicName = commands.Find(c => c.key == ArgType.NAME).value;
+           var description = m.TryGetArgument(ArgType.DESCRIPTION);
+           var topicName = m.GetArgument(ArgType.NAME);
            var creatorTcp = Data.RetrieveClientFromUsername(m.author.username);
-           CreateTopic(topicName,invitedUsernames, creatorTcp );
+           CreateTopic(topicName, description ,invitedUsernames, creatorTcp );
         }
 
         public void Disconnect(TcpClient requester, Message m)

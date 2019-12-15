@@ -55,8 +55,9 @@ namespace ChatCommunication
                 Parse();
             var splittedTab = ArgsPart.Split(' ');
             string[] argsTab = null;
-
-            if(ArgsPart.Contains("m:"))
+    
+            // Descriptions or chat messages can be more than 1 word long
+            if(ArgsPart.Contains("m:") || ArgsPart.Contains("d:"))
             {
                 int startMessagePos = -1;
                 int endMessagesPos = -1;
@@ -65,7 +66,7 @@ namespace ChatCommunication
                 for (int i = 0; i < splittedTab.Length; i++)
                 {
                     // We only accept spaced commands for a message type command
-                    if (splittedTab[i].StartsWith("m:"))
+                    if (splittedTab[i].StartsWith("m:") || ArgsPart.StartsWith("d:"))
                     {
                         startMessagePos = i;
                         messageValue.Add(splittedTab[i]);
@@ -101,6 +102,10 @@ namespace ChatCommunication
             else
             {
                 argsTab = splittedTab;
+            }
+            if(string.IsNullOrEmpty(ArgsPart) || !argsPart.Contains(":"))
+            {
+                return commands;
             }
             foreach(var keyValueArg in argsTab)
             {
@@ -163,6 +168,22 @@ namespace ChatCommunication
                 throw new InvalidCommandFormatException("Couldn't find the value in the entered command for the following key : " + argKey );
             
             return arg.value ;
+        }
+
+        /// <summary>
+        /// Does not throw exceptions if the argument is not found, is used for optional arguments (example: description of a topic)
+        /// Returns null if no argument is found
+        /// </summary>
+        public string TryGetArgument(string argKey)
+        {
+            if (args == null)
+                args = GetArguments();
+
+            var arg = args.Find(x => x.key == argKey);
+                if (arg == null)
+                    return null;
+
+            return arg.value;
         }
     }
 }

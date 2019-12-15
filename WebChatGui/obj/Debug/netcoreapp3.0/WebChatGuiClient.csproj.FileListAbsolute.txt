@@ -25,3 +25,5 @@ C:\Users\franc\source\repos\Web_App_Core\WebChatGui\obj\Debug\netcoreapp3.0\Mess
 C:\Users\franc\source\repos\Web_App_Core\WebChatGui\obj\Debug\netcoreapp3.0\App.baml
 C:\Users\franc\source\repos\Web_App_Core\WebChatGui\bin\Debug\netcoreapp3.0\ChatCommunicationClient.dll
 C:\Users\franc\source\repos\Web_App_Core\WebChatGui\bin\Debug\netcoreapp3.0\ChatCommunicationClient.pdb
+C:\Users\franc\source\repos\Web_App_Core\WebChatGui\obj\Debug\netcoreapp3.0\TopicWindow.g.cs
+C:\Users\franc\source\repos\Web_App_Core\WebChatGui\obj\Debug\netcoreapp3.0\TopicWindow.baml

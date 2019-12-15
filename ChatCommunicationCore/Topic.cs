@@ -29,6 +29,8 @@ namespace ChatCommunication
             }
         }
 
+        public string Description { get; set; }
+
         public Topic(string name)
         {
             this.Name = name;

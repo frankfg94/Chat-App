@@ -91,6 +91,8 @@ namespace WebChatGui
 
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
+                    if (isSuccess)
+                        connectButton.IsEnabled = false;
                     infoTBlock.Visibility = Visibility.Visible;
                     infoTBlock.Text = displayMsg;
                     infoTBlock.Foreground = msgColor;

@@ -224,11 +224,18 @@ namespace WebChatGuiClient
         /// </summary>
         private void UpdateOrCreateTopic(Message msg)
         {
+            // We want to rename the topic if necessary
+            var topicName = msg.TryGetArgument(ArgType.NAME);
+
             var downloadedTopic = msg.content as Topic;
             var localTopic = Data.topicList.Find(x => x.Name.Equals(downloadedTopic.Name));
             if (localTopic != null)
             {
                 Data.topicList.Remove(localTopic);
+            }
+            else if(topicName != null)
+            {
+                Data.topicList.Remove(Data.topicList.Find(x=>x.Name.Equals(topicName)));
             }
             Data.topicList.Add(downloadedTopic);
 
@@ -385,7 +392,11 @@ namespace WebChatGuiClient
                 if(window.curTopic == null || window.curTopic.Name.Equals(topic.Name))
                 {
                     window.headerConversationNameTblock.Text = topic.Name;
+                    if (topic.Description != null)
+                        window.headerConversationNameTblock.Text += " / " + topic.Description;
+
                     window.messageListbox.Items.Clear();
+                    window.editConvButton.IsEnabled = true;
 
                     foreach (var msg in topic.chatMessages)
                     {
@@ -402,8 +413,9 @@ namespace WebChatGuiClient
             window.curTopic = null;
             window.Dispatcher.BeginInvoke(new Action(() =>
             {
+                window.editConvButton.IsEnabled = false;
                 // We only clear the screen if we already are in this topic
-                    window.headerConversationNameTblock.Text = curChatter.username;
+                window.headerConversationNameTblock.Text = curChatter.username;
                     window.messageListbox.Items.Clear();
 
                     foreach (var msg in window.privateMessages)
@@ -417,6 +429,7 @@ namespace WebChatGuiClient
                     }
                 window.topicCard.Visibility = Visibility.Collapsed;
                 window.chatPanel.IsEnabled = true;
+                window.curChatterImg.Source = MessengerWindow.ByteToImage(curChatter.ImgData);
             }));
         }
     }
