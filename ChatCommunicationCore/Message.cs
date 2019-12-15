@@ -13,14 +13,14 @@ namespace ChatCommunication
     {
         private string commandPart;
         private string argsPart;
-        public User user;
+        public User author { get; set; }
         public string fullCommand;
         bool isParsed = false;
         public object content;
 
         public Message(User user, string command)
         {
-            this.user = user;
+            this.author = user;
             this.fullCommand = command;
         }
 
@@ -51,6 +51,8 @@ namespace ChatCommunication
         internal List<CommandArg> GetArguments()
         {
             var commands = new List<CommandArg>();
+            if (ArgsPart == null)
+                Parse();
             var splittedTab = ArgsPart.Split(' ');
             string[] argsTab = null;
 

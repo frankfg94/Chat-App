@@ -1,7 +1,7 @@
 ﻿WebChatGuiClient
 
 
-exe
+winexe
 C#
 .cs
 C:\Users\franc\source\repos\Web_App_Core\WebChatGui\obj\Debug\netcoreapp3.0\
@@ -16,5 +16,5 @@ C:\Users\franc\source\repos\Web_App_Core\WebChatGui\App.xaml
 196-726010954
 LoginWindow.xaml;MessengerWindow.xaml;
 
-True
+False
 

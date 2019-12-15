@@ -33,7 +33,7 @@ namespace ChatCommunication
                         {
                             msg.Parse();
                             Console.WriteLine("Signal received : " + msg.fullCommand);
-                            if (msg.user.isAuthentified)
+                            if (msg.author.isAuthentified)
                             {
                                 doOperationsAsUser(msg, msg.CommandPart, comm);
                             }
@@ -128,52 +128,52 @@ namespace ChatCommunication
                     msg = null;
                     break;
                 case "create topic":
-                    msg.user.AddNewTopic(msg);
+                    msg.author.AddNewTopic(msg);
                     msg = null;
                     break;
                 case "list topics":
-                    msg = msg.user.SendTopicsText();
+                    msg = msg.author.SendTopicsText();
                     break;
                 case "join topic":
                 case "enter topic":
                 case "join":
-                    msg = msg.user.EnterTopic(msg);
+                    msg = msg.author.EnterTopic(msg);
                     break;
                 case "msg topic":
                 case "send msg topic":
-                    msg.user.SendMessageInTopic(msg);
+                    msg.author.SendMessageInTopic(msg);
                     msg = null;
                     break;
                 case "list msg topic":
                 case "view topic":
-                    msg = msg.user.GetConversationOfTopic(msg.GetArgument(ArgType.NAME));
+                    msg = msg.author.GetConversationOfTopic(msg.GetArgument(ArgType.NAME));
                     break;
                 case "msg user":
-                    msg.user.SendMessageToUser(msg);
+                    msg.author.SendMessageToUser(msg);
                     msg = null;
                     break;
                 case "send file user":
-                    msg.user.SendFileToUser(msg);
+                    msg.author.SendFileToUser(msg);
                     msg = null;
                     break;
                 case "send file topic":
-                    msg.user.SendFileInTopic(msg);
+                    msg.author.SendFileInTopic(msg);
                     msg = null;
                     break;
                 case "send audio user":
-                    msg.user.SendAudioMsgToUser(msg);
+                    msg.author.SendAudioMsgToUser(msg);
                     msg = null;
                     break;
                 case "send audio topic":
-                    msg.user.SendAudioMsgToTopic(msg);
+                    msg.author.SendAudioMsgToTopic(msg);
                     msg = null;
                     break;
                 case "download topic":
-                    msg.user.SyncTopicForHisClient(comm, msg, msg.GetArgument(ArgType.NAME));
+                    msg.author.SyncTopicForHisClient(comm, msg, msg.GetArgument(ArgType.NAME));
                     msg = null;
                     break;
                 case "download topics":
-                    msg.user.SyncTopicsForHisClient(comm, msg);
+                    msg.author.SyncTopicsForHisClient(comm, msg);
                     msg = null;
                     break;
                 case "block user":
@@ -183,7 +183,7 @@ namespace ChatCommunication
                 case "disconnect":
                 case "logoff":
                 case "stop":
-                    msg.user.Disconnect(comm,msg);
+                    msg.author.Disconnect(comm,msg);
                     msg = null;
                     break;
                 default:

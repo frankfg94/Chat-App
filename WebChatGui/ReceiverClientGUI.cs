@@ -78,9 +78,6 @@ namespace WebChatGuiClient
                     case "sync topics":
                         DisplayTopics(msg);
                         break;
-                    case "disconnect":
-                       // DisconnectSuccess();
-                        break;
                     default:
                         string err = "unknown command was entered : " + msg.fullCommand;
                         msg.fullCommand = err;
@@ -267,7 +264,7 @@ namespace WebChatGuiClient
                 StackPanel panel = new StackPanel();
                 panel.Orientation = Orientation.Horizontal;
                 panel.Children.Add(new PackIcon { Margin=new Thickness(10) , Kind = PackIconKind.FileDownload , Foreground = Brushes.CadetBlue, Tag = m});
-                panel.Children.Add(new TextBlock { FontSize=14, Text = $"File available to download from {m.user.username} |  {m.GetArgument(ArgType.NAME)}" });
+                panel.Children.Add(new TextBlock { FontSize=14, Text = $"File available to download from {m.author.username} |  {m.GetArgument(ArgType.NAME)}" });
                 panel.MouseLeftButtonDown += DownloadTheFileInMsg;
                 window.messageListbox.Items.Add(panel);
             }));
@@ -293,33 +290,48 @@ namespace WebChatGuiClient
         {
             // We add the message to the user's inbox
             window.privateMessages.Add(msg);
-            User u = msg.author;
-            var sameUser = User.userList.Find(x => x.username.Equals(u.username));
+            User downloadedUser = msg.author;
+            var sameUser = User.userList.Find(x => x.username.Equals(downloadedUser.username));
 
             window.Dispatcher.BeginInvoke(new Action(() =>
             {
                 // We update the display of the user in the users listbox
-                window.usersListbox.Items.Remove(sameUser);
-                window.usersListbox.Items.Add(u);
+                
+                // Real time sync
+                if(window.curChatter != null && window.curChatter.username.Equals(msg.author.username))
+                {
+                    window.messageListbox.Items.Add(msg);
+                }
+
             }));
 
 
+
             // We find the number of messages for this user
-            if (u!= null )
+            if (downloadedUser!= null )
             {
                 int msgCountUser = 0;
                   foreach (var m in window.privateMessages)
                   {
-                      if(m.author.username.Equals(u.username))
+                      if(m.author.username.Equals(downloadedUser.username))
                       {
                           msgCountUser++;
                       }
                   }
 
-                // We change the display for the listbox item
-                u.addInfos = msgCountUser + " msgs" ;
+                window.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                foreach (User user in window.usersListbox.Items)
+                {
+                    // We change the display for the listbox item
+                    if(user.username.Equals(downloadedUser.username))
+                        downloadedUser.addInfos = msgCountUser + " msgs" ;
+                }
+
+                    window.usersListbox.Items.Refresh();
+                }));
             }
-            
+
         }
 
         Semaphore audioSem = new Semaphore(0, 1);
@@ -330,7 +342,7 @@ namespace WebChatGuiClient
                 StackPanel panel = new StackPanel();
                 panel.Orientation = Orientation.Horizontal;
                 panel.Children.Add(new PackIcon { Margin = new Thickness(10), Kind = PackIconKind.Audio, Foreground = Brushes.CadetBlue, Tag = m }); ;
-                panel.Children.Add(new TextBlock { FontSize = 14, Margin = new Thickness(5,0,0,0), Text = $"Audio File ready to listen from {m.user.username}" });
+                panel.Children.Add(new TextBlock { FontSize = 14, Margin = new Thickness(5,0,0,0), Text = $"Audio File ready to listen from {m.author.username}" });
                           
                 panel.MouseLeftButtonDown +=
 
@@ -383,6 +395,8 @@ namespace WebChatGuiClient
             }));
         }
 
+        // 
+       
         internal void DisplayUserChat(User curChatter)
         {
             window.curTopic = null;
@@ -394,10 +408,14 @@ namespace WebChatGuiClient
 
                     foreach (var msg in window.privateMessages)
                     {
-                        if (msg.author.username.Equals(curChatter.username) || msg.author.username.Equals(MessengerWindow.curUser.username))
+                    // If the message is sent to us by the curChatter     US <-- curchatter
+                        if (msg.destName.Equals(MessengerWindow.curUser.username) && msg.author.username.Equals(curChatter.username)
+                    // Or if the message is sent by us to the currrent Chatter  US --> curchatter
+                    || msg.author.username.Equals(MessengerWindow.curUser.username) && msg.destName.Equals(curChatter.username))
+                        // Then we display it
                             window.messageListbox.Items.Add(msg);
                     }
-
+                window.topicCard.Visibility = Visibility.Collapsed;
                 window.chatPanel.IsEnabled = true;
             }));
         }

@@ -10,7 +10,7 @@ using System.Text;
 namespace ChatCommunication
 {
     [Serializable]
-    public class User : INotifyPropertyChanged
+    public class User
     {
         private byte[] imgData;
         public byte[] ImgData
@@ -26,22 +26,9 @@ namespace ChatCommunication
         }
 
         public string username { get; set; }
-        private string infos = string.Empty;
 
-        public string addInfos
-        {
-            get { return infos; }
-            set
-            {
-                infos = value;
-                // We indicate that we want to sync the UI
-                NotifyPropertyChanged();
-            }
-        }
-        private void NotifyPropertyChanged([CallerMemberName] string propertyName = "")
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
+        public string addInfos { get; set; }
+
 
         public string password;
         readonly int id = 0;
@@ -164,7 +151,7 @@ namespace ChatCommunication
             }
             else
             {
-                var chatMsg = new ChatMessage(DateTime.Now, this, msgContent);
+                var chatMsg = new ChatMessage(DateTime.Now, this, username, msgContent);
                 Net.SendMsg(
                     destStream,
                     new Message(this, $"rcv user msg | data") { content = chatMsg, mustBeParsed = true});
@@ -230,10 +217,10 @@ namespace ChatCommunication
             List<CommandArg> commands = m.GetArguments();
 
             List<User> invitedUsernames = new List<User>();
-            Console.WriteLine($"'{m.user.username}' wants to create a topic");
+            Console.WriteLine($"'{m.author.username}' wants to create a topic");
 
             if(autoJoin)
-              invitedUsernames.Add(m.user);
+              invitedUsernames.Add(m.author);
 
             var userList = GetAllUsers();
             foreach (CommandArg arg in commands)
@@ -246,13 +233,13 @@ namespace ChatCommunication
             }
 
            var topicName = commands.Find(c => c.key == ArgType.NAME).value;
-           var creatorTcp = Data.RetrieveClientFromUsername(m.user.username);
+           var creatorTcp = Data.RetrieveClientFromUsername(m.author.username);
            CreateTopic(topicName,invitedUsernames, creatorTcp );
         }
 
         public void Disconnect(TcpClient requester, Message m)
         {
-            var usToDisconnect = m.user;
+            var usToDisconnect = m.author;
             usToDisconnect.isAuthentified = false;
             foreach (var userTcp in Data.userClients)
             {
@@ -268,9 +255,7 @@ namespace ChatCommunication
                     user.isAuthentified = false;
                 }
             }
-            Message response = new Message(User.GetBotUser(), "disconnect | data");
-            response.mustBeParsed = true;
-            Net.SendMsg(requester.GetStream(),response);
+            Console.WriteLine("User : " + m.author.username + " is now disconnected");
         }
 
         public void SendAudioMsgToTopic(Message msg)
@@ -348,7 +333,7 @@ namespace ChatCommunication
         public Message EnterTopic(Message m)
         {
             var topicName = m.GetArgument(ArgType.NAME);
-            return m.user.EnterTopic(topicName);
+            return m.author.EnterTopic(topicName);
         }
 
         public Message EnterTopic(string topicName)
@@ -386,7 +371,7 @@ namespace ChatCommunication
             {
                 if (t.Name.Equals(name))
                 {
-                    t.AddMessageAndSync(new ChatMessage(DateTime.Now, this, content));
+                    t.AddMessageAndSync(new ChatMessage(DateTime.Now, this,name, content));
                 }
             }
         }

@@ -67,7 +67,6 @@
                 <ListBoxItem Content="Topic1"/>
                 <ListBoxItem Content="Topic 2" />
                 <ListBoxItem Content="Topic 3"/>
-
             </ListBox>
         </StackPanel>
         <StackPanel  Grid.Row="2">
@@ -121,20 +120,23 @@
                 <Separator/>
             </StackPanel>
                 <ListBox  x:Name="messageListbox" Grid.Row="1" Background="LightGray" Margin="10">
-                   
                 <ItemsControl.Resources>
                         <DataTemplate DataType="{x:Type local:ChatMessage}">
                             <Grid HorizontalAlignment="Stretch" >
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="2*"/>
                                     <ColumnDefinition Width="10*" />
                                     <ColumnDefinition Width="1*" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0"  Orientation="Vertical">
-                                    <Image Width="30" Height="30" Source="{Binding Path=author.ImgData}"/>
+                                <Ellipse HorizontalAlignment="Left"  Width="30" Height="30">
+                                    <Ellipse.Fill>
+                                        <ImageBrush  ImageSource="{Binding Path=author.ImgData}"/>
+                                    </Ellipse.Fill>
+                                </Ellipse>
                                     <TextBlock Text="{Binding author.username}"/>
                                 </StackPanel>
-                                <TextBlock Grid.Column="1" VerticalAlignment="Center" FontSize="16" Margin="20 0 0 0" Text="{Binding content}"/>
+                                <TextBlock Grid.Column="1" VerticalAlignment="Center" FontSize="16" Margin="20 0 0 0" Text="{Binding content}" TextWrapping="Wrap"/>
                                 <TextBlock Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="2 0 0 0" FontFamily="Shruti" FontSize="12" Text="{Binding ShortTimeString}"/>
                             </Grid>
                         </DataTemplate>

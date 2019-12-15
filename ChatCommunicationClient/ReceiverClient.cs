@@ -304,7 +304,7 @@ namespace ChatCommunication
         public void HandleFileFromUser(Message msg)
         {
             var downloadMsg = $"Do you wish to download the file '{msg.GetArgument(ArgType.NAME)}' " +
-                     $"from the user '{msg.user.username}' ?";
+                     $"from the user '{msg.author.username}' ?";
             if (IsKeyboardConfirmed(s, downloadMsg, "(X) You refused the download"))
             {
                 DownloadFile(msg);
@@ -315,7 +315,7 @@ namespace ChatCommunication
 
         public void ReceiveAudioMsg(Message m)
         {
-            var downloadMsg = $"Do you wish to listen the audioClip  the user '{m.user.username}' ?";
+            var downloadMsg = $"Do you wish to listen the audioClip  the user '{m.author.username}' ?";
             if (IsKeyboardConfirmed(s, downloadMsg, "(X) You refused to listen to the audio clip"))
             {
                 if (audioModule == null)

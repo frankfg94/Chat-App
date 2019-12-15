@@ -26,10 +26,10 @@ namespace WebChatGuiClient
     public partial class MessengerWindow : Window
     {
         public ReceiverClientGUI clientActions;
-        public static User curUser = new GuiUser("guest", "guest");
-
+        public static User curUser = new User("guest", "guest");
+         
         // The user we are currently speaking to
-        User curChatter = null;
+        public User curChatter = null;
 
         // The topic we are currently messaging
         public Topic curTopic = null;
@@ -39,12 +39,12 @@ namespace WebChatGuiClient
         public MessengerWindow(TcpClient serverComm, User user)
         {
 
+            var clientActions = new ReceiverClientGUI(serverComm, this);
             // Loading the graphic components
             InitializeComponent();
             curUser = user;
             this.serverComm = serverComm;
 
-            var clientActions = new ReceiverClientGUI(serverComm, this);
             new Thread(clientActions.ListenServerMsgs).Start();
 
             // Sync the user list
@@ -83,18 +83,21 @@ namespace WebChatGuiClient
 
         private void MessengerWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            // AutoDisconnect when closing the window
-            Net.SendMsg(serverComm.GetStream(), new Message(curUser, "disconnect | data") { mustBeParsed = true });
-            clientActions.SyncUserList(curUser);
-            curUser = null;
-
             if (!appIsClosable)
             {
-                sb = this.FindResource("DeZoomAnim") as Storyboard;
-                Storyboard.SetTarget(sb, this);
-                sb.Completed += Sb_Completed;
-                sb.Begin();
-                e.Cancel = true;
+            // AutoDisconnect when closing the window
+            Net.SendMsg(serverComm.GetStream(), new Message(curUser, "disconnect | data") { mustBeParsed = true });
+            if(clientActions == null)
+            {
+                clientActions = new ReceiverClientGUI(serverComm, this);
+            }
+            clientActions.SyncUserList(curUser);
+            curUser = null;
+            sb = this.FindResource("DeZoomAnim") as Storyboard;
+            Storyboard.SetTarget(sb, this);
+            sb.Completed += Sb_Completed;
+            sb.Begin();
+            e.Cancel = true;
             }
             else
             {
@@ -128,7 +131,7 @@ namespace WebChatGuiClient
             this.Dispatcher.BeginInvoke(new Action(() => welcomeTblock.Text = "Welcome " + curUser.username));
 
             // Show the image of the user stored on the server
-            this.Dispatcher.BeginInvoke(new Action(() => profileImg.Source = ByteToImage((curUser as GuiUser).ImgData)));
+            this.Dispatcher.BeginInvoke(new Action(() => profileImg.Source = ByteToImage(curUser.ImgData)));
 
 
         }
@@ -188,7 +191,7 @@ namespace WebChatGuiClient
                 if (displayHide)
                 {
                     var dp = new DockPanel();
-                    dp.Children.Add(new MaterialDesignThemes.Wpf.PackIcon { Kind = MaterialDesignThemes.Wpf.PackIconKind.RemoveCircle });
+                    dp.Children.Add(new PackIcon { Kind = PackIconKind.RemoveCircle });
                     dp.Children.Add(new TextBlock { Text = " Cacher ", Margin = new Thickness(5, 0, 0, 0) });
                     l.Content = dp;
                 }
@@ -197,12 +200,12 @@ namespace WebChatGuiClient
                     var dp = new DockPanel();
                     if (isConv)
                     {
-                        dp.Children.Add(new MaterialDesignThemes.Wpf.PackIcon { Kind = MaterialDesignThemes.Wpf.PackIconKind.Chat });
+                        dp.Children.Add(new PackIcon { Kind = PackIconKind.Chat });
                         dp.Children.Add(new TextBlock { Text = "Conversations", Margin = new Thickness(5, 0, 0, 0) });
                     }
                     else
                     {
-                        dp.Children.Add(new MaterialDesignThemes.Wpf.PackIcon { Kind = MaterialDesignThemes.Wpf.PackIconKind.User });
+                        dp.Children.Add(new PackIcon { Kind = PackIconKind.User });
                         dp.Children.Add(new TextBlock { Text = "Users", Margin = new Thickness(5, 0, 0, 0) });
                     }
                     l.Content = dp;
@@ -246,7 +249,7 @@ namespace WebChatGuiClient
 
                     // Configuring the command for whether it is for an user or a conversation
                     Message m;
-                    string command = "";
+                    string command;
                     if (curChatter != null)
                     {
                         command = $"send file user | p:{path} n:{newName} u:{curUser.username}";
@@ -293,8 +296,8 @@ namespace WebChatGuiClient
                         else if (curChatter != null)
                         {
                             Net.SendMsg(serverComm.GetStream(), new Message(curUser, $"msg user | u:{curChatter.username} m:{(sender as TextBox).Text}"));
-                            messageListbox.Items.Add(new ChatMessage(DateTime.Now, curUser, (sender as TextBox).Text));
-                            privateMessages.Add(new ChatMessage(DateTime.Now,curUser,(sender as TextBox).Text));
+                            messageListbox.Items.Add(new ChatMessage(DateTime.Now, curUser, curChatter.username ,(sender as TextBox).Text));
+                            privateMessages.Add(new ChatMessage(DateTime.Now,curUser,curChatter.username,(sender as TextBox).Text));
                             (sender as TextBox).Text = string.Empty;
                         }
                     }
@@ -332,7 +335,7 @@ namespace WebChatGuiClient
 
             // Configuring the command for whether it is for an user or a conversation
             Message m = null;
-            string command = "";
+            string command;
             if (curChatter != null)
             {
                 command = $"send audio user | u:{curUser.username}";
@@ -371,6 +374,7 @@ namespace WebChatGuiClient
                 {
                     clientActions = new ReceiverClientGUI(serverComm, this);
                 }
+                curChatter = null;
                 curTopic = item.Content as Topic;
                 if (curTopic.users.Find(x => x.username.Equals(curUser.username)) == null)
                 {
