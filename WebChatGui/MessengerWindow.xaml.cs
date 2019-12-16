@@ -143,22 +143,6 @@ namespace WebChatGuiClient
                 DragMove();
         }
 
-        private void Button_MouseEnter(object sender, MouseEventArgs e)
-        {
-            Dispatcher.BeginInvoke(new Action(() =>
-            {
-            }
-            ));
-        }
-
-        private void Button_MouseLeave(object sender, MouseEventArgs e)
-        {
-            Dispatcher.BeginInvoke(new Action(() =>
-            {
-
-            }
-            ));
-        }
 
 
         private void convLabel_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

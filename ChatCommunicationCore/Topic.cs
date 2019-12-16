@@ -64,7 +64,10 @@ namespace ChatCommunication
                 var msg = new Message(User.GetBotUser(), $"refresh topic | n:{Name}") ;
                 msg.mustBeParsed = true;
                 msg.content = chatMessage;
-                Net.SendMsg(Data.RetrieveClientFromUsername(u.username).GetStream(), msg); // Refresh all the clients that are in this topic
+                var client = Data.RetrieveClientFromUsername(u.username);
+                
+                if(client != null)
+                    Net.SendMsg(client.GetStream(), msg); // Refresh all the clients that are in this topic
             }
         }
 

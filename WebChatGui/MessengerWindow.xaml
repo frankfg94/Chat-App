@@ -175,7 +175,7 @@
             <DockPanel IsEnabled="False" x:Name="chatPanel" Grid.Row="2">
                 <StackPanel Margin=" 20 0 0 0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" >
                     <Button Click="sendFileButton_Click" x:Name="sendFileButton" Foreground="DarkSlateGray" Height="35" Width="35"  BorderBrush="{x:Null}" Background="LightBlue" 
-                           MouseEnter="Button_MouseEnter" MouseLeave="Button_MouseLeave"
+                           
                             Style="{StaticResource MaterialDesignFloatingActionButton}">
                         <wpf:PackIcon
                                 Kind="FileOutline"
@@ -184,7 +184,6 @@
                                 />
                     </Button>
                     <Button x:Name="sendAudioButton" Foreground="DarkSlateGray" Margin="5 0 0 0" BorderThickness="1" Height="35" Width="35" BorderBrush="{x:Null}" Background="LightBlue" 
-                           MouseEnter="Button_MouseEnter" MouseLeave="Button_MouseLeave"
                             Style="{StaticResource MaterialDesignFloatingActionButton}" Cursor="Hand" Click="sendAudioButton_Click" >
                         <wpf:PackIcon
                                 Kind="Microphone"
@@ -193,7 +192,6 @@
                                 />
                     </Button>
                     <Button x:Name="sendImgButton" Foreground="DarkSlateGray" Margin="5 0 0 0" BorderThickness="1" Height="35" Width="35" BorderBrush="{x:Null}" Background="LightBlue" 
-                           MouseEnter="Button_MouseEnter" MouseLeave="Button_MouseLeave"
                             Style="{StaticResource MaterialDesignFloatingActionButton}" Cursor="Hand" Click="sendImgButton_Click" >
                         <wpf:PackIcon
                                 Kind="Image"
@@ -225,6 +223,11 @@
                         <TextBlock x:Name="topicDescrTblock" Foreground="Gray" Margin="10" Text="No description has been given for this topic"/>
                         <TextBlock x:Name="topicUsCountTblock" Foreground="Gray" Margin="10" Text="1 user is on this topic"/>
                         <ItemsControl x:Name="userTopicsItemsControl" MinHeight="30">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="{x:Type local:User}">
                                     <StackPanel Margin="5" Orientation="Horizontal">

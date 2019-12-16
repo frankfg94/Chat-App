@@ -354,7 +354,7 @@ namespace ChatCommunication
             usToDisconnect.isAuthentified = false;
             foreach (var userTcp in Data.userClients)
             {
-                if(userTcp.user.username.Equals(usToDisconnect.username))
+                if(userTcp.user!=null && userTcp.user.username.Equals(usToDisconnect.username))
                 {
                     userTcp.user = null;
                 }
