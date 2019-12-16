@@ -10,6 +10,8 @@ namespace ChatCommunication
     [Serializable]
     public class Topic : INotifyPropertyChanged
     {
+
+        #region class variables
         private string name;
         
         public List<User> users = new List<User>();
@@ -30,6 +32,20 @@ namespace ChatCommunication
         }
 
         public string Description { get; set; }
+
+        #endregion
+        public override bool Equals(object obj)
+        {
+            if ((obj == null) || !this.GetType().Equals(obj.GetType()))
+            {
+                return false;
+            }
+            else
+            {
+                Topic t = (Topic)obj;
+                return t.Name.Equals(Name);
+            }
+        }
 
         public Topic(string name)
         {

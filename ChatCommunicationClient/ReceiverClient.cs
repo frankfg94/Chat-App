@@ -29,7 +29,7 @@ namespace ChatCommunication
             {
                 keyboardCommand = Console.ReadLine();
                 // We send data here
-                if (keyboardCommand != "")
+                if (keyboardCommand != string.Empty)
                 {
                     if (confirmationForDownloadRequested)
                     {
@@ -215,6 +215,7 @@ namespace ChatCommunication
                     case "disconnect":
                         DisconnectSuccess();
                         break;
+
                     default:
                         string err = "unknown command was entered : " + msg.fullCommand;
                         msg.fullCommand = err;

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
@@ -41,10 +42,22 @@ namespace ChatCommunication
             this.password = password;
         }
 
+        public override bool Equals(object obj)
+        {
+            if ((obj == null) || !this.GetType().Equals(obj.GetType()))
+            {
+                return false;
+            }
+            else
+            {
+                User u = (User)obj;
+                return u.username.Equals(u.username);
+            }
+        }
+
         public void CreateTopic(string name, string description, List<User> invitedUsers, TcpClient creatorComm = null)
         {
-            lock(name)
-            {
+            
                 var topic = new Topic(name);
                 topic.users.AddRange(invitedUsers);
                 if (description != null)
@@ -59,13 +72,10 @@ namespace ChatCommunication
                     Net.SendMsg(u.tcpClient.GetStream(), new Message(User.GetBotUser(), $"sync topic | data") {mustBeParsed = true, content = topic });
                     Console.WriteLine("Sent to : " + u.user.username);
                 }
-            }
         }
 
         public void CreateTopicAndNotifyAll(string name, List<User> invitedUsers)
         {
-            lock (name)
-            {
                 var topic = new Topic(name);
                 topic.users.AddRange(invitedUsers);
                 Data.topicList.Add(topic);
@@ -75,7 +85,6 @@ namespace ChatCommunication
                     Net.SendMsg(u.tcpClient.GetStream(),new Message(User.GetBotUser(),"rcv new topic | data"));
                 }
                 Console.WriteLine($"Topic '{name}' created successfully ");
-            }
         }
 
         // Must be used by the server
@@ -97,15 +106,6 @@ namespace ChatCommunication
                 }
                 return new Message(User.GetBotUser(),conversation.ToString());
             
-        }
-
-        public Message GetTopicObject(string name)
-        {
-            Topic t = Data.topicList.Find(x => x.Name.Equals(name));
-            var msg = new Message(User.GetBotUser(), "rcv topic conv | data");
-            msg.mustBeParsed = true;
-            msg.content = t;
-            return msg;
         }
 
         /// <summary>
@@ -134,31 +134,29 @@ namespace ChatCommunication
         // msg user | u:William m:coucou
         public void SendMessageToUser( Message msg)
         {
-            var username = msg.GetArgument(ArgType.USERNAME); // william
-            var chatMessage = msg.GetArgument(ArgType.MESSAGE); // coucou
-            TcpClient destClient = Data.RetrieveClientFromUsername(username); // william
-            SendMessageToUser(destClient.GetStream(), username, chatMessage);
+            var destUsername = msg.GetArgument(ArgType.USERNAME); 
+            var messageContent = msg.GetArgument(ArgType.MESSAGE);
+            TcpClient destClient = Data.RetrieveClientFromUsername(destUsername);
+            var users = GetAllUsers();
+            var destUser = users.Find(u => u.username.Equals(destUsername));
+            var msgId = GetNewMsgIdSafe();
+
+            // Send to the user
+            SendMessageToUser(destClient.GetStream(), msg.author, destUser, messageContent,msgId);
+
+            // Send the message to self
+            if(!destUsername.Equals(msg.author.username))
+                SendMessageToUser(Data.RetrieveClientFromUsername(msg.author.username).GetStream(), msg.author,destUser, messageContent,msgId);
         }
 
         // 1 . The server receives the message from User 1
         // 2 (HERE) . The server redirects the messsage to User 2
         // To find User 2, we use its id
-        private void SendMessageToUser(Stream destStream, string username, string msgContent)
+        private void SendMessageToUser(Stream destStream,User sender, User destUser, string msgContent, int mId)
         {
-           var users = GetAllUsers();
-           var destUser = users.Find(u => u.username.Equals(username));
-            if (destUser == null)
-            {
-                throw new NullReferenceException($"Destination User '{username}' not found");
-            }
-            else
-            {
-                var chatMsg = new ChatMessage(DateTime.Now, this, username, msgContent);
-                Net.SendMsg(
-                    destStream,
-                    new Message(this, $"rcv user msg | data") { content = chatMsg, mustBeParsed = true});
+                var chatMsg = new ChatMessage(DateTime.Now, sender, destUser.username, msgContent) { id = mId };
+                Net.SendMsg( destStream, new Message(destUser, $"rcv user msg | data") { content = chatMsg, mustBeParsed = true});
                 Console.WriteLine("msg sent to user : " + destUser.username);
-            }
         }
 
         public void UpdateTopic(Message msg)
@@ -177,22 +175,19 @@ namespace ChatCommunication
 
         public void DeleteTopic(Message msg)
         {
-          var topicName = msg.GetArgument(ArgType.NAME);
-          Data.topicList.RemoveAll(x => x.Name.Equals(topicName));
+              var topicName = msg.GetArgument(ArgType.NAME);
+              Data.topicList.RemoveAll(x => x.Name.Equals(topicName));
 
-        // Synchronize all the clients to remove the topic
-         var resp = new Message(GetBotUser(),"sync topics | data");
-         resp.content = Data.topicList;
-         resp.mustBeParsed = true;
-         foreach (var tcpUser in Data.userClients)
-         {
-                Net.SendMsg(tcpUser.tcpClient.GetStream(), resp);
-         }
-         Console.WriteLine("topic deleted, topics synced with clients");
-
+            // Synchronize all the clients to remove the topic
+             var resp = new Message(GetBotUser(),"sync topics | data");
+             resp.content = Data.topicList;
+             resp.mustBeParsed = true;
+             foreach (var tcpUser in Data.userClients)
+             {
+                    Net.SendMsg(tcpUser.tcpClient.GetStream(), resp);
+             }
+             Console.WriteLine("topic deleted, topics synced with clients");
         }
-
-
 
         /// <summary>
         /// Return the user that represents the server
@@ -203,11 +198,104 @@ namespace ChatCommunication
             return bot;
         }
 
+        public void DeleteMsg(string idString)
+        {
+            int msgIdToDel = int.Parse(idString);
+            SearchAndRemoveMessage(msgIdToDel,Data.topicList);
+        }
+
+        public void EditMsgAndSend(string idString, string newContent)
+        {
+            int msgIdToEdit = int.Parse(idString);
+            SearchAndEditMessage(msgIdToEdit, newContent, Data.topicList);
+        }
+
+        /// <summary>
+        /// Replace the message with the id of msg variable with the content of the msg message
+        /// </summary>
+        /// <param name="msg"></param>
+        public void EditMsgAndSend(ChatMessage msg)
+        {
+            SearchAndEditMessage(msg.id, msg.content, Data.topicList, msg);
+        }
+
+        private void SearchAndEditMessage(int msgIdToEdit, string newContent, List<Topic> topicList, ChatMessage replaceContent = null)
+        {
+            Topic editedTopic = null;
+            foreach (var topic in topicList)
+            {
+                foreach (var msg in topic.chatMessages.ToList())
+                {
+                    if (msg.id == msgIdToEdit)
+                    {
+                        topic.chatMessages.Remove(msg);
+                        topic.chatMessages.Add(new ChatMessage(msg.date, msg.author, msg.destName, newContent) { id = msgIdToEdit});
+                        editedTopic = topic;
+                    }
+                }
+            }
+            // We only send the message to the users that need to be updated (that are in the topic)
+            if (editedTopic != null)
+            {
+                foreach (var user in editedTopic.users)
+                {
+                    Net.SendMsg(Data.RetrieveClientFromUsername(user.username).GetStream()
+                        , new Message(GetBotUser(), $"edit msg | id:{msgIdToEdit} m:{newContent}") { mustBeParsed = true, content = replaceContent });
+                    Console.WriteLine($"Sent to {user.username}:  edit msg | id:{msgIdToEdit} m:{newContent}");
+                }
+            }
+            else
+            {
+                foreach (var user in Data.userClients)
+                {
+                    Net.SendMsg(user.tcpClient.GetStream()
+                        , new Message(GetBotUser(), $"edit msg | id:{msgIdToEdit}  m:{newContent}") { mustBeParsed = true, content = replaceContent });
+                    Console.WriteLine($"Sent to {user.user.username}:  edit msg | id:{msgIdToEdit} m:{newContent}");
+                }
+            }
+        }
+
+        private void SearchAndRemoveMessage(int msgIdToDel, List<Topic> topicList)
+        {
+            Topic editedTopic = null;
+            foreach (var topic in topicList)
+            {
+                foreach (var msg in topic.chatMessages.ToList())
+                {
+                    if (msg.id == msgIdToDel)
+                    {
+                        topic.chatMessages.Remove(msg);
+                        editedTopic = topic;
+                    }
+                }
+            }
+
+            if(editedTopic!=null)
+                foreach (var user in editedTopic.users)
+                {
+                    Net.SendMsg(Data.RetrieveClientFromUsername(user.username).GetStream()
+                        ,new Message(GetBotUser(), $"rmv msg | id:{msgIdToDel}") { mustBeParsed = true });
+                }
+            else
+            {
+                foreach (var user in Data.userClients)
+                {
+                    Net.SendMsg(user.tcpClient.GetStream()
+                        , new Message(GetBotUser(), $"rmv msg | id:{msgIdToDel}") { mustBeParsed = true });
+                }
+            }
+            
+        }
+
         public void SendMessageInTopic(Message msg)
         {
             var topicName = msg.GetArgument(ArgType.NAME);
-            var chatMessage = msg.GetArgument(ArgType.MESSAGE);
-            SendMessageInTopic(topicName,chatMessage);
+            var textContent = msg.GetArgument(ArgType.MESSAGE);
+
+            if(msg.content != null && msg.content is ImageChatMessage chatMsg)
+                SendMessageInTopic(topicName,textContent, chatMsg);
+            else
+                SendMessageInTopic(topicName,textContent);
         }
 
         public void SendFileToUser(Message msg)
@@ -254,7 +342,7 @@ namespace ChatCommunication
             if(autoJoin)
               invitedUsernames.Add(m.author);
 
-           var description = m.TryGetArgument(ArgType.DESCRIPTION);
+           var description = m.GetOptionalArgument(ArgType.DESCRIPTION);
            var topicName = m.GetArgument(ArgType.NAME);
            var creatorTcp = Data.RetrieveClientFromUsername(m.author.username);
            CreateTopic(topicName, description ,invitedUsernames, creatorTcp );
@@ -325,8 +413,6 @@ namespace ChatCommunication
             return userList;
         }
 
-
-
         public Message SendTopicsText()
         {
             StringBuilder sb = new StringBuilder();
@@ -353,6 +439,8 @@ namespace ChatCommunication
             return new Message(User.GetBotUser(),sb.ToString()); 
         }
 
+        private static object lockSendMsg = new object();
+        private static object lockEnterTopic = new object();
         public Message EnterTopic(Message m)
         {
             var topicName = m.GetArgument(ArgType.NAME);
@@ -376,25 +464,47 @@ namespace ChatCommunication
         /// <returns></returns>
         public Message EnterTopic(Topic topic)
         {
-            if (topic.users.Find(x => x.username.Equals(username)) == null)
+            lock(lockEnterTopic)
             {
-                topic.users.Add(this);
-                Console.WriteLine($"User {username} has entered the chat in the topic " + topic.Name);
-                return GetConversationOfTopic(topic.Name);
-            }
-            else
-            {
-                return new Message(this, "You have already joined this topic") { mustBeParsed = false};
+                if (topic.users.Find(x => x.username.Equals(username)) == null)
+                {
+                    topic.users.Add(this);
+                    Console.WriteLine($"User {username} has entered the chat in the topic " + topic.Name);
+                    return GetConversationOfTopic(topic.Name);
+                }
+                else
+                {
+                    return new Message(this, "You have already joined this topic") { mustBeParsed = false};
+                }
             }
         }
 
-        public void SendMessageInTopic(string name, string content)
+        public static int msgGlobalId = 0;
+       
+        private int GetNewMsgIdSafe()
+        {
+            lock(lockSendMsg)
+            {
+                return msgGlobalId++;
+            }
+        }
+
+        public void SendMessageInTopic(string name, string content, ChatMessage senderChatMsg = null)
         {
             foreach (Topic t in Data.topicList)
             {
                 if (t.Name.Equals(name))
                 {
-                    t.AddMessageAndSync(new ChatMessage(DateTime.Now, this,name, content));
+                        lock(lockSendMsg)
+                        {
+                            if(senderChatMsg == null)
+                                t.AddMessageAndSync(new ChatMessage(DateTime.Now, this, name, content) { id = GetNewMsgIdSafe()});
+                            else
+                            {
+                                senderChatMsg.id = GetNewMsgIdSafe();
+                                t.AddMessageAndSync(senderChatMsg);
+                            }
+                        }
                 }
             }
         }

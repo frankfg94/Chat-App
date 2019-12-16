@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:WebChatGuiClient"
         mc:Ignorable="d" ResizeMode="NoResize"
         Title="CreationWindow" WindowStartupLocation="CenterScreen" Height="250" Width="300">
-    <Grid x:Name="grid">
+    <Grid x:Name="grid" Cursor="Hand">
         <Grid.RowDefinitions>
             <RowDefinition Height="1*" />
             <RowDefinition Height="4*" />

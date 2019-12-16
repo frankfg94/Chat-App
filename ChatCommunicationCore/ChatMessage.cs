@@ -5,6 +5,8 @@ namespace ChatCommunication
     [Serializable]
     public class ChatMessage
     {
+        public int id = -1;
+
         public DateTime date { get; set; }
         public User author { get; set; }
         public string destName { get; set; }

@@ -36,6 +36,8 @@ namespace WebChatGuiClient
         private readonly TcpClient serverComm;
         public List<ChatMessage> privateMessages = new List<ChatMessage>();
 
+        private ChatMessage chatMsgToEdit = null;
+
         public MessengerWindow(TcpClient serverComm, User user)
         {
 
@@ -288,21 +290,24 @@ namespace WebChatGuiClient
                 {
                     if((sender as TextBox).Text.Trim() != string.Empty )
                     {
-                        if(curTopic != null)
+                        if (chatMsgToEdit != null)
+                        {
+                            Net.SendMsg(serverComm.GetStream(), new Message(curUser, $"edit msg | id:{chatMsgToEdit.id} m:{(sender as TextBox).Text.Trim()}") { mustBeParsed = true });
+                            chatMsgToEdit = null;
+                        }
+                        else if (curTopic != null)
                         {
                             Net.SendMsg(serverComm.GetStream(),new Message(curUser,$"msg topic | n:{curTopic.Name} m:{(sender as TextBox).Text}"));
-                           (sender as TextBox).Text = string.Empty;
                         }
                         else if (curChatter != null)
                         {
+                            clientActions.pauseLoop = true;
                             Net.SendMsg(serverComm.GetStream(), new Message(curUser, $"msg user | u:{curChatter.username} m:{(sender as TextBox).Text}"));
-                            if(!curChatter.username.Equals(curUser.username))
-                            {
-                                messageListbox.Items.Add(new ChatMessage(DateTime.Now, curUser, curChatter.username ,(sender as TextBox).Text));
-                                privateMessages.Add(new ChatMessage(DateTime.Now,curUser,curChatter.username,(sender as TextBox).Text));
-                            }
-                            (sender as TextBox).Text = string.Empty;
                         }
+                        (sender as TextBox).Text = string.Empty;
+
+                        
+
                     }
                 }));
             }
@@ -424,6 +429,113 @@ namespace WebChatGuiClient
         {
             if (curTopic != null)
                 new TopicWindow(serverComm,curTopic).ShowDialog();
+        }
+
+        private void deleteMsg_Click(object sender, RoutedEventArgs e)
+        {
+
+            if (messageListbox.SelectedItem != null)
+            {
+                var chatMsg = messageListbox.SelectedItem as ChatMessage;
+                Net.SendMsg(serverComm.GetStream(),new Message(curUser, $"delete msg | id:{chatMsg.id}") { mustBeParsed = true});
+            }
+        }
+
+        private void editMsg_Click(object sender, RoutedEventArgs e)
+        {
+             if (messageListbox.SelectedItem != null)
+            {
+                var chatMsg = messageListbox.SelectedItem as ChatMessage;
+                if(chatMsg is ImageChatMessage imgMsg)
+                {
+                    Message m = null;
+                    string command = null;
+                    OpenFileDialog openFileDialog = new OpenFileDialog();
+                    openFileDialog.FileName = "Choose the image to send";
+                    openFileDialog.Filter = "Image Format (*.jpg, *.jpeg, *.jpe, *.jfif, *.png) | *.jpg; *.jpeg; *.jpe; *.jfif; *.png";
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        if (openFileDialog.ShowDialog() == true)
+                        {
+                            // Configuring the command to send
+                            var path = openFileDialog.FileName;
+                            var tabDots = path.Split('.');
+                            var extension = tabDots[tabDots.Length - 1]; // Ex: .jpg
+                            var filename = path.Split("\\").Last();
+
+                            // We get the new image, that will replace the previous one
+                            var bytes = File.ReadAllBytes(path);
+                            imgMsg.imgData = bytes;
+
+                            // We indicate that we want to edit the message's image
+                            command = $"edit msg | id:{imgMsg.id} m:{filename}";
+                            try
+                            {
+                                m = new Message(curUser, command) { mustBeParsed = true };
+                                m.content = imgMsg;
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine(ex.Message);
+                                Console.WriteLine(ex.StackTrace);
+                            }
+                            // Sending the file to the server
+                            Net.SendMsg(serverComm.GetStream(),m);
+                        }
+                    }));
+                }
+                else
+                {
+                    chatMsgToEdit = chatMsg;
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        msgTbox.Text = chatMsg.content;
+                    }));
+                }
+            }
+        }
+
+        private void sendImgButton_Click(object sender, RoutedEventArgs e)
+        {
+            Message m = null;
+            string command = null;
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.FileName = "Choose the image to send";
+            openFileDialog.Filter = "Image Format (*.jpg, *.jpeg, *.jpe, *.jfif, *.png) | *.jpg; *.jpeg; *.jpe; *.jfif; *.png";
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (openFileDialog.ShowDialog() == true)
+                {
+                    // Configuring the command to send
+                    var path = openFileDialog.FileName;
+                    var tabDots = path.Split('.');
+                    var extension = tabDots[tabDots.Length - 1]; // Ex: .jpg
+                    var filename = path.Split("\\").Last();
+                    ImageChatMessage chMsg = null;
+                    if (curChatter != null || (curTopic == null && curChatter == null))
+                    {
+                        command = $"msg user | p:na u:{curUser.username} m:{filename}";
+                        chMsg = new ImageChatMessage(DateTime.Now,curUser,curUser.username,filename,File.ReadAllBytes(path));
+                    }
+                    else if (curTopic != null)
+                    {
+                        command = $"msg topic | p:na  n:{curTopic.Name} m:{filename}";
+                        chMsg = new ImageChatMessage(DateTime.Now, curUser, curTopic.Name, filename,File.ReadAllBytes(path));
+                    }
+                    try
+                    {
+                        m = new Message(curUser, command) { mustBeParsed = true };
+                        m.content = chMsg;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                        Console.WriteLine(ex.StackTrace);
+                    }
+                    // Sending the file to the server
+                    Net.SendMsg(serverComm.GetStream(), m);
+                }
+            }));
         }
     }
           

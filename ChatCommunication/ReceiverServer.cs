@@ -103,20 +103,24 @@ namespace ChatCommunication
 
         }
 
+        private static object lockCreateUser = new object();
         private bool TryCreateUser(string username, string password, out string errMsg)
         {
-            foreach (var user in User.GetAllUsers())
+            lock(lockCreateUser)
             {
-                if (user.username.Equals(username))
+                foreach (var user in User.GetAllUsers())
                 {
-                    errMsg = "User already exists";
-                    return false;
+                    if (user.username.Equals(username))
+                    {
+                        errMsg = "User already exists";
+                        return false;
+                    }
                 }
+                User u = new User(username, password);
+                User.userList.Add(u);
+                errMsg = string.Empty;
+                return true;
             }
-            User u = new User(username, password);
-            User.userList.Add(u);
-            errMsg = string.Empty;
-            return true;
         }
 
         public void doOperationsAsUser(Message msg, string commandLine, TcpClient comm)
@@ -182,6 +186,17 @@ namespace ChatCommunication
                     break;
                 case "download topics":
                     msg.author.SyncTopicsForHisClient(comm, msg);
+                    msg = null;
+                    break;
+                case "delete msg":
+                    msg.author.DeleteMsg(msg.GetArgument(ArgType.MSG_ID));
+                    msg = null;
+                    break;
+                case "edit msg":
+                    if (msg.content is ChatMessage cMsg)
+                        msg.author.EditMsgAndSend(cMsg);
+                    else
+                        msg.author.EditMsgAndSend(msg.GetArgument(ArgType.MSG_ID), msg.GetArgument(ArgType.MESSAGE));
                     msg = null;
                     break;
                 case "block user":

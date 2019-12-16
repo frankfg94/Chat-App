@@ -31,11 +31,12 @@ namespace WebChatGuiClient
             this.window = window;
         }
         
+        public  bool pauseLoop = false;
         public void ListenServerMsgs()
         {
             while(true)
             {
-                if(comm.GetStream().DataAvailable)
+                if(comm.GetStream().DataAvailable && !pauseLoop)
                 {
                     var incommingMsg = Net.RcvMsg(comm.GetStream());
                     DoOperationClientSide(incommingMsg);
@@ -78,6 +79,12 @@ namespace WebChatGuiClient
                     case "sync topics":
                         DisplayTopics(msg);
                         break;
+                    case "edit msg":
+                        SearchAndEditMsg(msg);
+                        break;
+                    case "rmv msg":
+                        SearchAndRemoveMsg(msg);
+                        break;
                     default:
                         string err = "unknown command was entered : " + msg.fullCommand;
                         msg.fullCommand = err;
@@ -95,7 +102,122 @@ namespace WebChatGuiClient
             }
         }
 
-        
+        private void SearchAndEditMsg(Message msg)
+        {
+            var newText = msg.GetArgument(ArgType.MESSAGE);
+            var replacementMsg = msg.content as ChatMessage;
+            if (int.TryParse(msg.GetArgument(ArgType.MSG_ID), out int msgId))
+            {
+
+                foreach (var topic in Data.topicList)
+                {
+                    foreach (var tMsg in topic.chatMessages)
+                    {
+                        if (tMsg.id.Equals(msgId))
+                        {
+                            EditMsg(tMsg,newText, topic, replacementMsg);
+                            break;
+                        }
+                    }
+                }
+
+                foreach (var pMsg in window.privateMessages)
+                {
+                    if (pMsg.id.Equals(msgId))
+                    {
+                        EditMsg(pMsg,newText, null, replacementMsg);
+                        break;
+                    }
+                }
+            }
+        }
+
+        private void EditMsg(ChatMessage oldMsg, string newTxt, Topic topic, ChatMessage replaceMsg = null)
+        {
+            int msgIndex = -1;
+            var newMsg = oldMsg;
+            if (replaceMsg == null)
+                newMsg.content = newTxt;
+            else
+                newMsg = replaceMsg;
+            if (topic != null)
+            {
+                 msgIndex = topic.chatMessages.IndexOf(oldMsg);
+                topic.chatMessages.Remove(oldMsg);
+                topic.chatMessages.Insert(msgIndex, newMsg);
+            }
+            else
+            {
+                 msgIndex = window.privateMessages.IndexOf(oldMsg);
+                window.privateMessages.Remove(oldMsg);
+                window.privateMessages.Insert(msgIndex,newMsg);
+            }
+
+            // Graphic Sync, if the topic is currently being viewed, remove the message in real time
+            foreach (ChatMessage msgLbox in window.messageListbox.Items)
+            {
+                if (msgLbox.id.Equals(oldMsg.id))
+                {
+                    window.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        window.messageListbox.Items.Remove(msgLbox);
+                        window.messageListbox.Items.Insert(msgIndex,newMsg);
+                    }));
+                    break;
+                }
+            }
+        }
+
+        private void SearchAndRemoveMsg(Message msg)
+        {
+            if(int.TryParse(msg.GetArgument(ArgType.MSG_ID),out int msgId))
+            {
+                foreach (var topic in Data.topicList)
+                {
+                    foreach (var tMsg in topic.chatMessages)
+                    {
+                        if(tMsg.id.Equals(msgId))
+                        {
+                            RemoveMsg(tMsg,topic);
+                            break;
+                        }
+                    }
+                }
+
+                foreach (var pMsg in window.privateMessages)
+                {
+                    if (pMsg.id.Equals(msgId))
+                    {
+                        RemoveMsg(pMsg,null);
+                        break;
+                    }
+                }
+            }
+        }
+
+        private void RemoveMsg(ChatMessage msg, Topic topic)
+        {
+            if(topic!=null)
+                 topic.chatMessages.Remove(msg);
+            else
+                 window.privateMessages.Remove(msg);
+
+            // Graphic Sync, if the topic / user is currently being viewed, remove the message in real time
+            foreach (ChatMessage msgLbox in window.messageListbox.Items)
+            {
+                if(msgLbox.id.Equals(msg.id))
+                {
+                    window.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        window.messageListbox.Items.Remove(msgLbox);
+                        if (topic != null)
+                            UpdateTopicListDisplay(topic);
+                    }));
+                    break;
+                }
+            } 
+        }
+
         private void AddMsgTopic(string topicName, ChatMessage chatMessage)
         {
             var topic = Data.topicList.Find(x => x.Name.Equals(topicName));
@@ -114,10 +236,11 @@ namespace WebChatGuiClient
                 {
                     window.Dispatcher.BeginInvoke(new Action(() =>
                     {
-                        window.messageListbox.Items.Add(chatMessage);
+                            window.messageListbox.Items.Add(chatMessage);
+                            window.messageListbox.Items.Refresh();
                     }));
                 }
-                UpdateTopicDisplay(topic);
+                UpdateTopicListDisplay(topic);
             }
         }
 
@@ -145,7 +268,7 @@ namespace WebChatGuiClient
         }
        
         // Listbox only
-        private void UpdateTopicDisplay(Topic t)
+        private void UpdateTopicListDisplay(Topic t)
         {
 
             // We update the topic display on the left side
@@ -210,7 +333,7 @@ namespace WebChatGuiClient
             }
             else
             {
-                MessageBox.Show($"(!) The you want to upload doesn't exist at {fileToUploadPath}");
+                MessageBox.Show($"(!) The file you want to upload doesn't exist at {fileToUploadPath}");
             }
         }
 
@@ -225,7 +348,7 @@ namespace WebChatGuiClient
         private void UpdateOrCreateTopic(Message msg)
         {
             // We want to rename the topic if necessary
-            var topicName = msg.TryGetArgument(ArgType.NAME);
+            var topicName = msg.GetOptionalArgument(ArgType.NAME);
 
             var downloadedTopic = msg.content as Topic;
             var localTopic = Data.topicList.Find(x => x.Name.Equals(downloadedTopic.Name));
@@ -316,7 +439,9 @@ namespace WebChatGuiClient
                 // We update the display of the user in the users listbox
                 
                 // Real time sync
-                if(window.curChatter != null && window.curChatter.username.Equals(msg.author.username))
+                if(window.curChatter != null && msg.destName.Equals(MessengerWindow.curUser.username) && msg.author.username.Equals(window.curChatter.username)
+                    // Or if the message is sent by us to the currrent Chatter  US --> curchatter
+                    || msg.author.username.Equals(MessengerWindow.curUser.username) && msg.destName.Equals(window.curChatter.username))
                 {
                     window.messageListbox.Items.Add(msg);
                 }

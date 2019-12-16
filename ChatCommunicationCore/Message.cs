@@ -66,7 +66,7 @@ namespace ChatCommunication
                 for (int i = 0; i < splittedTab.Length; i++)
                 {
                     // We only accept spaced commands for a message type command
-                    if (splittedTab[i].StartsWith("m:") || ArgsPart.StartsWith("d:"))
+                    if (splittedTab[i].StartsWith("m:") || splittedTab[i].StartsWith("d:"))
                     {
                         startMessagePos = i;
                         messageValue.Add(splittedTab[i]);
@@ -109,14 +109,18 @@ namespace ChatCommunication
             }
             foreach(var keyValueArg in argsTab)
             {
-                var tab = keyValueArg.Split(":");
-                var key = tab[0];
-                var value = tab[1];
+                if(!keyValueArg.Equals(""))
+                {
+                    var tab = keyValueArg.Split(":");
+                    var key = tab[0];
+                    var value = tab[1];
 
-                if (!ArgType.KeyIsValid(key))
-                    throw new InvalidCommandFormatException("The argument's key '" + key+"' is not recognized (is it added to the list of possible arguments?)");
+                    if (!ArgType.KeyIsValid(key))
+                        throw new InvalidCommandFormatException("The argument's key '" + key+"' is not recognized (is it added to the list of possible arguments?)");
 
-                commands.Add(new CommandArg(key, value));
+                    commands.Add(new CommandArg(key, value));
+                }
+
 
             }
             return commands;
@@ -174,7 +178,7 @@ namespace ChatCommunication
         /// Does not throw exceptions if the argument is not found, is used for optional arguments (example: description of a topic)
         /// Returns null if no argument is found
         /// </summary>
-        public string TryGetArgument(string argKey)
+        public string GetOptionalArgument(string argKey)
         {
             if (args == null)
                 args = GetArguments();
