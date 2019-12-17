@@ -37,7 +37,7 @@ namespace WebChatGuiClient
 
                  // update the server by sending the topic creation signal
                  Net.SendMsg(serverComm.GetStream(),new Message(MessengerWindow.curUser,
-                     $"create topic | n:{topicNameTbox.Text.Trim()} d:{topicDescriptionTbox.Text.Trim()}"));
+                     $"create topic | n:{topicNameTbox.Text.Trim().Replace(' ', '-')} d:{topicDescriptionTbox.Text.Trim()}"));
                  Close();
              }));
             };
@@ -56,6 +56,8 @@ namespace WebChatGuiClient
         {
             Button deleteBut  = new Button
                     {
+
+                        // Setting up our 'delete topic' button
                         Content = "Delete this topic",
                         Style = this.Resources["MaterialDesignFlatAccentBgButton"] as Style,
                         Background = Brushes.Red,
@@ -91,7 +93,7 @@ namespace WebChatGuiClient
 
                  // update the server by applying the changes on the topic
                  Net.SendMsg(serverComm.GetStream(), new Message(MessengerWindow.curUser,
-                                 $"update topic | n:{oldName} nn:{topicNameTbox.Text.Trim()} d:{topicDescriptionTbox.Text.Trim()}"));
+                                 $"update topic | n:{oldName} nn:{topicNameTbox.Text.Trim().Replace(' ','-')} d:{topicDescriptionTbox.Text.Trim()}"));
                  Close();
              }));
             };

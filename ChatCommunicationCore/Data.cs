@@ -19,7 +19,7 @@ namespace ChatCommunication
             {
                 foreach (var userClient in userClients)
                 {
-                    if (userClient.user.username.Equals(username))
+                    if (userClient.user !=null && userClient.user.username.Equals(username))
                         return userClient.tcpClient;
                 }
             }

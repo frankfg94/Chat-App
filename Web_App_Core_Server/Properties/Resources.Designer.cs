@@ -89,5 +89,15 @@ namespace Web_App_Core_Server.Properties {
                 return ((byte[])(obj));
             }
         }
+        
+        /// <summary>
+        ///   Recherche une ressource localisée de type System.Byte[].
+        /// </summary>
+        internal static byte[] Nicolas {
+            get {
+                object obj = ResourceManager.GetObject("Nicolas", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
     }
 }

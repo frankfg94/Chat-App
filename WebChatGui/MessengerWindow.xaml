@@ -5,9 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:local="clr-namespace:ChatCommunication;assembly=ChatCommunicationCore"
-        mc:Ignorable="d"
+        mc:Ignorable="d" Title="Quick Chat"
         Height="450" Width="800"
-        WindowStyle="SingleBorderWindow"
+        WindowStyle="SingleBorderWindow" MinWidth="500"
         xmlns:wpf="clr-namespace:MaterialDesignThemes.Wpf;assembly=MaterialDesignThemes.Wpf" Background="White">
     <Window.Resources>
         <Storyboard x:Key="DeZoomAnim">
@@ -40,9 +40,9 @@
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition MinWidth="130" Width="*"/>
-            <ColumnDefinition  Width="3*"/>
+            <ColumnDefinition MinWidth="220" Width="3*"/>
         </Grid.ColumnDefinitions>
-        <GridSplitter Width="1" Background="Gray" Grid.Column="1" HorizontalAlignment="Left" Grid.RowSpan="4"/>
+        <GridSplitter Width="2" Background="Gray" Grid.Column="1" HorizontalAlignment="Left" Grid.RowSpan="4"/>
 
         <DockPanel Margin="15" Grid.Column="0" Grid.Row="0">
             <Image x:Name="profileImg" Height="35" Width="35" />
@@ -121,9 +121,9 @@
                 </DockPanel>
                 <Separator/>
             </StackPanel>
-                <ListBox x:Name="messageListbox" Grid.Row="1" Background="WhiteSmoke" Margin="10">
-                <ItemsControl.ContextMenu>
-                    <ContextMenu>
+            <ListBox x:Name="messageListbox" Grid.Row="1" Background="WhiteSmoke" Margin="10" ContextMenuOpening="contextMenuOpen_messageListbox">
+                <ItemsControl.ContextMenu >
+                    <ContextMenu x:Name="cMenu">
                         <MenuItem x:Name="deleteMsg" Header="Delete" Click="deleteMsg_Click"/>
                         <MenuItem x:Name="editMsg" Header="Edit" Click="editMsg_Click"/>
                     </ContextMenu>

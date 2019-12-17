@@ -60,8 +60,13 @@ namespace ChatCommunication
             
                 var topic = new Topic(name);
                 topic.users.AddRange(invitedUsers);
-                if (description != null)
-                    topic.Description = description;
+
+            // If the description is an empty string, then we consider that there is no description for the topic
+            if (!string.Empty.Equals(description))
+                topic.Description = description;
+            else
+                topic.Description = null;
+
                 Data.topicList.Add(topic);
                 Console.WriteLine($"Topic '{name}' created successfully ");
                 Console.WriteLine("> Sending the topic to each user : ");
@@ -326,10 +331,13 @@ namespace ChatCommunication
             foreach (var user in t.users)
             {
                 TcpClient destClient = Data.RetrieveClientFromUsername(user.username);
+                if(destClient != null)
+                {
                 Net.SendMsg(
                         destClient.GetStream(),
                         new Message(this, $"rcv file user | n:{fileName}") { content = fileData, mustBeParsed = true });
                 Console.WriteLine("File sent to the user " + user.username + " with a byte array : " + fileName);
+                }
             }
         }
 
@@ -348,15 +356,15 @@ namespace ChatCommunication
            CreateTopic(topicName, description ,invitedUsernames, creatorTcp );
         }
 
-        public void Disconnect(TcpClient requester, Message m)
+        public void Disconnect(Message m)
         {
             var usToDisconnect = m.author;
             usToDisconnect.isAuthentified = false;
-            foreach (var userTcp in Data.userClients)
+            foreach (var userTcp in Data.userClients.ToList())
             {
                 if(userTcp.user!=null && userTcp.user.username.Equals(usToDisconnect.username))
                 {
-                    userTcp.user = null;
+                    Data.userClients.Remove(userTcp);
                 }
             }
             foreach (var user in User.userList)

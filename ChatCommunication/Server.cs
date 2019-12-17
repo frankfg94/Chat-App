@@ -10,7 +10,6 @@ namespace ChatCommunication
     public class Server : CommunicatorBase
     {
 
-        public static List<Topic> topicList = new List<Topic>();    
 
         public void Start(IPAddress iPAddress,int port)
         {

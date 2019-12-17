@@ -52,7 +52,7 @@ namespace WebChatGuiClient
                 switch (msg.CommandPart)
                 {
                     case "sync user list":
-                        window.SetUserList(msg.content as List<User>);
+                        window.DisplayUsersStatus(msg.content as List<User>);
                         Console.WriteLine("User list is updated!");
                         break;
                     case "rcv file user":
@@ -363,29 +363,42 @@ namespace WebChatGuiClient
             Data.topicList.Add(downloadedTopic);
 
             // Graphical update
-            DisplayConversationsInLbox(Data.topicList);
             DisplayTopicChat(downloadedTopic);
+            SyncConversationsInLbox(Data.topicList);
 
         }
 
         public void DisplayTopics(Message m)
         {
            var topics = Data.topicList=  m.content as List<Topic>;
-            DisplayConversationsInLbox(topics);
+            SyncConversationsInLbox(topics);
         }
 
-        private void DisplayConversationsInLbox(List<Topic> topics)
+        private void SyncConversationsInLbox(List<Topic> topics)
         {
             window.Dispatcher.BeginInvoke(new Action(() =>
             {
+                var oldTopics = window.convListbox.Items;
+
+                string deletedTopicName = null;
+                foreach (Topic top in oldTopics)
+                {
+                    
+                        if(!topics.Contains(top))
+                        {
+                            deletedTopicName = top.Name;
+                            break;
+                        }
+                }
+
                 window.convListbox.Items.Clear();
                 foreach (var t in topics)
                 {
                     window.convListbox.Items.Add(t);
                 }
 
-                // Clean the topic message list if we are in it
-                if(window.curTopic != null && window.curTopic.Name.Equals(window.headerConversationNameTblock.Tag))
+                // if the topic is deleted, clean it
+                if(deletedTopicName!=null && deletedTopicName.Equals(window.headerConversationNameTblock.Tag))
                 {
                     window.messageListbox.Items.Clear();
                     window.editConvButton.IsEnabled = false;
@@ -568,6 +581,7 @@ namespace WebChatGuiClient
                             window.messageListbox.Items.Add(msg);
                     }
                 window.topicCard.Visibility = Visibility.Collapsed;
+                window.headerConversationNameTblock.Tag = null;
                 window.chatPanel.IsEnabled = true;
                 window.curChatterImg.Source = MessengerWindow.ByteToImage(curChatter.ImgData);
             }));

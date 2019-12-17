@@ -109,7 +109,7 @@ namespace ChatCommunication
             lock(lockCreateUser)
             {
                 foreach (var user in User.GetAllUsers())
-                {
+                {   
                     if (user.username.Equals(username))
                     {
                         errMsg = "User already exists";
@@ -206,7 +206,7 @@ namespace ChatCommunication
                 case "disconnect":
                 case "logoff":
                 case "stop":
-                    msg.author.Disconnect(comm,msg);
+                    msg.author.Disconnect(msg);
                     msg = null;
                     break;
                 default:
