@@ -63,6 +63,16 @@ namespace Web_App_Core_Server.Properties {
         /// <summary>
         ///   Recherche une ressource localisée de type System.Byte[].
         /// </summary>
+        internal static byte[] brad {
+            get {
+                object obj = ResourceManager.GetObject("brad", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une ressource localisée de type System.Byte[].
+        /// </summary>
         internal static byte[] Francois {
             get {
                 object obj = ResourceManager.GetObject("Francois", resourceCulture);
@@ -73,19 +83,9 @@ namespace Web_App_Core_Server.Properties {
         /// <summary>
         ///   Recherche une ressource localisée de type System.Byte[].
         /// </summary>
-        internal static byte[] Marc {
+        internal static byte[] gaga {
             get {
-                object obj = ResourceManager.GetObject("Marc", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une ressource localisée de type System.Byte[].
-        /// </summary>
-        internal static byte[] Marine {
-            get {
-                object obj = ResourceManager.GetObject("Marine", resourceCulture);
+                object obj = ResourceManager.GetObject("gaga", resourceCulture);
                 return ((byte[])(obj));
             }
         }

@@ -118,14 +118,14 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="brad" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\brad.jpg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="Francois" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Francois.jpg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="Marc" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\marcFB.jpg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="Marine" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Marine.jpg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  <data name="gaga" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\gaga.jpg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="Nicolas" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Nicolas.jpg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>

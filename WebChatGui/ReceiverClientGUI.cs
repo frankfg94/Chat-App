@@ -21,13 +21,13 @@ namespace WebChatGuiClient
     public class ReceiverClientGUI : IClientChatActions
     {
         private const bool DEBUG_SHOW_RCV_COMMANDS  = true;
-        private readonly TcpClient comm;
+        private readonly TcpClient serverComm;
         private readonly MessengerWindow window;
 
 
         public ReceiverClientGUI(TcpClient comm,MessengerWindow window)
         {
-            this.comm = comm;
+            this.serverComm = comm;
             this.window = window;
         }
         
@@ -36,9 +36,9 @@ namespace WebChatGuiClient
         {
             while(true)
             {
-                if(comm.GetStream().DataAvailable && !pauseLoop)
+                if(serverComm.GetStream().DataAvailable && !pauseLoop)
                 {
-                    var incommingMsg = Net.RcvMsg(comm.GetStream());
+                    var incommingMsg = Net.RcvMsg(serverComm.GetStream());
                     DoOperationClientSide(incommingMsg);
                 }
             }
@@ -106,9 +106,13 @@ namespace WebChatGuiClient
         {
             var newText = msg.GetArgument(ArgType.MESSAGE);
             var replacementMsg = msg.content as ChatMessage;
+
             if (int.TryParse(msg.GetArgument(ArgType.MSG_ID), out int msgId))
             {
-
+                // If the message id is -1, then it is not found, so we can directly stop this method
+                if (msgId.Equals(-1))
+                    return;
+               
                 foreach (var topic in Data.topicList)
                 {
                     foreach (var tMsg in topic.chatMessages)
@@ -121,6 +125,7 @@ namespace WebChatGuiClient
                     }
                 }
 
+                // we editg the private message
                 foreach (var pMsg in window.privateMessages)
                 {
                     if (pMsg.id.Equals(msgId))
@@ -136,24 +141,29 @@ namespace WebChatGuiClient
         {
             int msgIndex = -1;
             var newMsg = oldMsg;
+
+            // We have two possibilities for editing the message, whether we can replace the whole message
+            // It is mandatory if we want to edit an image for example
             if (replaceMsg == null)
                 newMsg.content = newTxt;
-            else
+            else   // Or, we can just replace the text of the message
                 newMsg = replaceMsg;
+
+            // We check if it is a topic message
             if (topic != null)
             {
                  msgIndex = topic.chatMessages.IndexOf(oldMsg);
                 topic.chatMessages.Remove(oldMsg);
                 topic.chatMessages.Insert(msgIndex, newMsg);
             }
-            else
+            else // If it is a private message, it will be handled differently
             {
-                 msgIndex = window.privateMessages.IndexOf(oldMsg);
+                msgIndex = window.privateMessages.IndexOf(oldMsg);
                 window.privateMessages.Remove(oldMsg);
                 window.privateMessages.Insert(msgIndex,newMsg);
             }
 
-            // Graphic Sync, if the topic is currently being viewed, remove the message in real time
+            // GUI Sync, if the topic is currently being viewed, remove the message in real time
             foreach (ChatMessage msgLbox in window.messageListbox.Items)
             {
                 if (msgLbox.id.Equals(oldMsg.id))
@@ -246,7 +256,7 @@ namespace WebChatGuiClient
 
         public void SyncTopicList(User senderOfCommand)
         {
-            Net.SendMsg(comm.GetStream(), new Message(senderOfCommand, "download topics | data") { mustBeParsed = true });
+            Net.SendMsg(serverComm.GetStream(), new Message(senderOfCommand, "download topics | data") { mustBeParsed = true });
             Console.WriteLine("Sent sync request (Topics)");
         }
 
@@ -282,16 +292,11 @@ namespace WebChatGuiClient
             }
             else
                 t.addInfos = "( Empty ) ";
-
-           
-        
         }
-
-
 
         public void SyncUserList(User senderOfCommand)
         {
-            Net.SendMsg(comm.GetStream(), new Message(senderOfCommand, "sync user list | data") { mustBeParsed = true });
+            Net.SendMsg(serverComm.GetStream(), new Message(senderOfCommand, "sync user list | data") { mustBeParsed = true });
             Console.WriteLine("Sent sync request (Users)");
         }
 
@@ -401,7 +406,7 @@ namespace WebChatGuiClient
                 if(deletedTopicName!=null && deletedTopicName.Equals(window.headerConversationNameTblock.Tag))
                 {
                     window.messageListbox.Items.Clear();
-                    window.editConvButton.IsEnabled = false;
+                    window.editTopicButton.IsEnabled = false;
                     window.headerConversationNameTblock.Text = "This topic was deleted";
                     window.chatPanel.IsEnabled = false;
                     // We reset the tag
@@ -490,6 +495,45 @@ namespace WebChatGuiClient
 
         }
 
+        public void EditWithWindowsExplorer(ImageChatMessage imgMsg)
+        {
+            Message m = null;
+            string command = null;
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.FileName = "Choose the image to send";
+            openFileDialog.Filter = "Image Format (*.jpg, *.jpeg, *.jpe, *.jfif, *.png) | *.jpg; *.jpeg; *.jpe; *.jfif; *.png";
+            window.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (openFileDialog.ShowDialog() == true)
+                {
+                    // Configuring the command to send
+                    var path = openFileDialog.FileName;
+                    var tabDots = path.Split('.');
+                    var extension = tabDots[tabDots.Length - 1]; // Ex: .jpg
+                    var filename = path.Split("\\").Last();
+
+                    // We get the new image, that will replace the previous one
+                    var bytes = File.ReadAllBytes(path);
+                    imgMsg.imgData = bytes;
+
+                    // We indicate that we want to edit the message's image
+                    command = $"edit msg | id:{imgMsg.id} m:{filename}";
+                    try
+                    {
+                        m = new Message(MessengerWindow.curUser, command) { mustBeParsed = true };
+                        m.content = imgMsg;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                        Console.WriteLine(ex.StackTrace);
+                    }
+                    // Sending the file to the server
+                    Net.SendMsg(serverComm.GetStream(), m);
+                }
+            }));
+        }
+
         Semaphore audioSem = new Semaphore(0, 1);
         public void ReceiveAudioMsg(Message m)
         {
@@ -540,16 +584,22 @@ namespace WebChatGuiClient
                 // We only clear the screen if we already are in this topic
                 if(window.curTopic == null || window.curTopic.Name.Equals(topic.Name))
                 {
+
+                    // We update the displayed conversation header name
                     window.headerConversationNameTblock.Text = topic.Name;
 
-                    // Setting the tag allows us to remember when to remove the messages of the deleted topic that we are observing
+                    // Setting the Tag property allows us to remember when to remove the messages of the deleted topic that we are observing
                     window.headerConversationNameTblock.Tag = topic.Name;
 
+                    // We only add the slash if there is a description
                     if (topic.Description != null)
                         window.headerConversationNameTblock.Text += " / " + topic.Description;
 
+                    // When we display all the topics
                     window.messageListbox.Items.Clear();
-                    window.editConvButton.IsEnabled = true;
+
+                    // Because we are in a conversation, we can now edit a topic
+                    window.editTopicButton.IsEnabled = true;
 
                     foreach (var msg in topic.chatMessages)
                     {
@@ -566,7 +616,7 @@ namespace WebChatGuiClient
             window.curTopic = null;
             window.Dispatcher.BeginInvoke(new Action(() =>
             {
-                window.editConvButton.IsEnabled = false;
+                window.editTopicButton.IsEnabled = false;
                 // We only clear the screen if we already are in this topic
                 window.headerConversationNameTblock.Text = curChatter.username;
                 window.messageListbox.Items.Clear();

@@ -21,7 +21,7 @@ namespace WebChatGuiClient
     /// </summary>
     public partial class MessengerWindow : Window
     {
-        public ReceiverClientGUI clientActions;
+        public ReceiverClientGUI clientGuiReceiver;
 
         // The user that is used for sending messages
         public static User curUser = new User("guest", "guest");
@@ -53,8 +53,7 @@ namespace WebChatGuiClient
             new Thread(clientActions.ListenServerMsgs).Start();
 
 
-
-            // Sync the user list
+            // Sync the user list (download all the existing users and display them)
             clientActions.SyncUserList(curUser);
 
             // Clear the listbox for the sample topics
@@ -99,11 +98,11 @@ namespace WebChatGuiClient
             {
                 // AutoDisconnect when closing the window
                 Net.SendMsg(serverComm.GetStream(), new Message(curUser, "disconnect | data") { mustBeParsed = true });
-                if (clientActions == null)
+                if (clientGuiReceiver == null)
                 {
-                    clientActions = new ReceiverClientGUI(serverComm, this);
+                    clientGuiReceiver = new ReceiverClientGUI(serverComm, this);
                 }
-                clientActions.SyncUserList(curUser);
+                clientGuiReceiver.SyncUserList(curUser);
                 curUser = null;
                 sb = this.FindResource("DeZoomAnim") as Storyboard;
                 Storyboard.SetTarget(sb, this);
@@ -262,7 +261,7 @@ namespace WebChatGuiClient
                     try
                     {
                         // Correcting the problem with the path
-                        clientActions.ConfigureFileToSend(m);
+                        clientGuiReceiver.ConfigureFileToSend(m);
                     }
                     catch (Exception ex)
                     {
@@ -295,7 +294,7 @@ namespace WebChatGuiClient
                         }
                         else if (curChatter != null)
                         {
-                            clientActions.pauseLoop = true;
+                            clientGuiReceiver.pauseLoop = true;
                             Net.SendMsg(serverComm.GetStream(), new Message(curUser, $"msg user | u:{curChatter.username} m:{(sender as TextBox).Text}"));
                         }
                         (sender as TextBox).Text = string.Empty;
@@ -350,7 +349,7 @@ namespace WebChatGuiClient
             try
             {
                 m = new Message(curUser, command) { mustBeParsed = true };
-                clientActions.ConfigureAudioToSend(m);
+                clientGuiReceiver.ConfigureAudioToSend(m);
             }
             catch (Exception ex)
             {
@@ -369,9 +368,9 @@ namespace WebChatGuiClient
             // We check if a listboxitem is clicked
             if (item != null)
             {
-                if (clientActions == null)
+                if (clientGuiReceiver == null)
                 {
-                    clientActions = new ReceiverClientGUI(serverComm, this);
+                    clientGuiReceiver = new ReceiverClientGUI(serverComm, this);
                 }
                 curChatter = null;
                 curTopic = item.Content as Topic;
@@ -394,7 +393,7 @@ namespace WebChatGuiClient
                     chatPanel.IsEnabled = true;
                     msgTbox.Focus();
                 }
-                clientActions.DisplayTopicChat(item.Content as Topic);
+                clientGuiReceiver.DisplayTopicChat(item.Content as Topic);
             }
         }
 
@@ -404,12 +403,12 @@ namespace WebChatGuiClient
             var lboxItem = ItemsControl.ContainerFromElement(sender as ListBox, e.OriginalSource as DependencyObject) as ListBoxItem;
             if (lboxItem != null)
             {
-                if (clientActions == null)
+                if (clientGuiReceiver == null)
                 {
-                    clientActions = new ReceiverClientGUI(serverComm, this);
+                    clientGuiReceiver = new ReceiverClientGUI(serverComm, this);
                 }
                 curChatter = lboxItem.Content as User;
-                clientActions.DisplayUserChat(curChatter);
+                clientGuiReceiver.DisplayUserChat(curChatter);
             }
         }
 
@@ -445,41 +444,7 @@ namespace WebChatGuiClient
                 var chatMsg = messageListbox.SelectedItem as ChatMessage;
                 if (chatMsg is ImageChatMessage imgMsg)
                 {
-                    Message m = null;
-                    string command = null;
-                    OpenFileDialog openFileDialog = new OpenFileDialog();
-                    openFileDialog.FileName = "Choose the image to send";
-                    openFileDialog.Filter = "Image Format (*.jpg, *.jpeg, *.jpe, *.jfif, *.png) | *.jpg; *.jpeg; *.jpe; *.jfif; *.png";
-                    Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        if (openFileDialog.ShowDialog() == true)
-                        {
-                            // Configuring the command to send
-                            var path = openFileDialog.FileName;
-                            var tabDots = path.Split('.');
-                            var extension = tabDots[tabDots.Length - 1]; // Ex: .jpg
-                            var filename = path.Split("\\").Last();
-
-                            // We get the new image, that will replace the previous one
-                            var bytes = File.ReadAllBytes(path);
-                            imgMsg.imgData = bytes;
-
-                            // We indicate that we want to edit the message's image
-                            command = $"edit msg | id:{imgMsg.id} m:{filename}";
-                            try
-                            {
-                                m = new Message(curUser, command) { mustBeParsed = true };
-                                m.content = imgMsg;
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine(ex.Message);
-                                Console.WriteLine(ex.StackTrace);
-                            }
-                            // Sending the file to the server
-                            Net.SendMsg(serverComm.GetStream(), m);
-                        }
-                    }));
+                    clientGuiReceiver.EditWithWindowsExplorer(imgMsg);
                 }
                 else
                 {

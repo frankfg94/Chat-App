@@ -53,7 +53,7 @@ namespace ChatCommunication
         }
 
         // run by the server
-        internal void AddMessageAndSync(ChatMessage chatMessage)
+        public void AddMessageAndSync(ChatMessage chatMessage)
         {
             chatMessages.Add(chatMessage);
             Console.WriteLine("Message sent in topic : " + Name);
@@ -61,13 +61,16 @@ namespace ChatCommunication
             // Refresh the messages for each client
             foreach (var u in this.users)
             {
-                var msg = new Message(User.GetBotUser(), $"refresh topic | n:{Name}") ;
-                msg.mustBeParsed = true;
-                msg.content = chatMessage;
-                var client = Data.RetrieveClientFromUsername(u.username);
+                if(u.isAuthentified)
+                {
+                    var msg = new Message(User.GetBotUser(), $"refresh topic | n:{Name}") ;
+                    msg.mustBeParsed = true;
+                    msg.content = chatMessage;
+                    var client = Data.RetrieveClientFromUsername(u.username);
                 
-                if(client != null)
-                    Net.SendMsg(client.GetStream(), msg); // Refresh all the clients that are in this topic
+                    if(client != null)
+                        Net.SendMsg(client.GetStream(), msg); // Refresh all the clients that are in this topic
+                }
             }
         }
 

@@ -112,7 +112,7 @@
                             <TextBlock x:Name="headerConversationNameTblock" Margin="8"  FontFamily="Cordia New" Foreground="Gray"  VerticalAlignment="Center" Text="This is the name of the conversation / User"/>
                         </StackPanel>
                     </Viewbox>
-                    <Button ToolTip="Edit this topic" Click="editConvButton_Click" x:Name="editConvButton" Foreground="Gray" Style="{StaticResource MaterialDesignFlatButton}" HorizontalAlignment="Right" Margin="0 0 20 0">
+                    <Button ToolTip="Edit this topic" Click="editConvButton_Click" x:Name="editTopicButton" Foreground="Gray" Style="{StaticResource MaterialDesignFlatButton}" HorizontalAlignment="Right" Margin="0 0 20 0">
                         <materialDesign:PackIcon
                             Kind="Edit"
                             Height="21"

@@ -40,7 +40,7 @@ namespace ChatCommunication
                             downloadAllowed = false;
 
                         // From 1 to 0, we allow the other thread to be executed
-                        s.Release();
+                        fileSem.Release();
                     }
 
                     var msg = new Message(curUser, keyboardCommand);
@@ -126,8 +126,6 @@ namespace ChatCommunication
                     {
 
                         // On reçoit quelque chose, comme par exemple un message
-
-                        {
                             var msg = Net.RcvMsg(comm.GetStream());
                             if (!msg.mustBeParsed)
                                 Console.WriteLine(Environment.NewLine + "Info = " + msg.fullCommand);
@@ -142,7 +140,6 @@ namespace ChatCommunication
                                     Console.WriteLine("Error parsing & processing in client : " + ex);
                                 }
                             }
-                        }
                     }
                 }
             }
@@ -152,7 +149,7 @@ namespace ChatCommunication
 
 
         // When the client receives an instruction from the server
-        Semaphore s = new Semaphore(0, 1);
+        Semaphore fileSem = new Semaphore(0, 1);
         private bool confirmationForDownloadRequested;
         private bool downloadAllowed = false;
 
@@ -306,7 +303,7 @@ namespace ChatCommunication
         {
             var downloadMsg = $"Do you wish to download the file '{msg.GetArgument(ArgType.NAME)}' " +
                      $"from the user '{msg.author.username}' ?";
-            if (IsKeyboardConfirmed(s, downloadMsg, "(X) You refused the download"))
+            if (IsKeyboardConfirmed(fileSem, downloadMsg, "(X) You refused the download"))
             {
                 DownloadFile(msg);
             }
@@ -317,7 +314,7 @@ namespace ChatCommunication
         public void ReceiveAudioMsg(Message m)
         {
             var downloadMsg = $"Do you wish to listen the audioClip  the user '{m.author.username}' ?";
-            if (IsKeyboardConfirmed(s, downloadMsg, "(X) You refused to listen to the audio clip"))
+            if (IsKeyboardConfirmed(fileSem, downloadMsg, "(X) You refused to listen to the audio clip"))
             {
                 if (audioModule == null)
                 {
