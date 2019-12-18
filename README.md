@@ -1,6 +1,6 @@
 # Quick Chat M1 | EFREI P2021
 
-This application is a multithreaded C# Messaging app on Windows (Gui version), and Linux, MacOs (console version). It was designed with WPF.
+This application is a multithreaded C# Messaging app on Windows (Gui version), and Linux, MacOs (console version). It was designed to be complete yet pleasant to use.
 
 ## Features
 
