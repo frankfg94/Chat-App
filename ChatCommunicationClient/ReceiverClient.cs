@@ -13,8 +13,7 @@ namespace ChatCommunication
     public class ReceiverClient : CommunicatorBase, IClientChatActions
     {
 
-        private static string IP_SERVER_ADDRESS = "127.0.0.1";
-        private static int PORT = 8976;
+
         private const bool DEBUG_SHOW_RCV_COMMANDS = false;
 
         IAudioModule audioModule;
@@ -81,7 +80,7 @@ namespace ChatCommunication
         }
 
         string keyboardCommand = "";
-        public void JoinServerConsole()
+        public void JoinServerConsole(string IP_SERVER_ADDRESS, int PORT)
         {
             Console.WriteLine("[CLIENT] Creating TcpClient");
             comm = new TcpClient(IP_SERVER_ADDRESS, PORT);

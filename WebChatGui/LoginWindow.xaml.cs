@@ -1,20 +1,9 @@
 ﻿using ChatCommunication;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Sockets;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using WebChatGuiClient;
 
 namespace WebChatGui
@@ -35,7 +24,7 @@ namespace WebChatGui
             InitializeComponent();
             connectButton.Click += ConnectButton_Click;
             this.Loaded += LoginWindow_Loaded;
-            
+
         }
 
         private void LoginWindow_Loaded(object sender, RoutedEventArgs e)
@@ -48,7 +37,7 @@ namespace WebChatGui
             {
                 Console.WriteLine(ex.Message);
                 Console.WriteLine(ex.StackTrace);
-                if(MessageBox.Show(ex.Message + Environment.NewLine + " Do you wish to try again ?","Error of connection",MessageBoxButton.YesNo,MessageBoxImage.Warning) ==  MessageBoxResult.Yes)
+                if (MessageBox.Show(ex.Message + Environment.NewLine + " Do you wish to try again ?", "Error of connection", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
                 {
                     LoginWindow_Loaded(sender, e);
                 }
@@ -64,30 +53,30 @@ namespace WebChatGui
         {
             try
             {
-            Net.SendMsg(comm.GetStream(),new Message(curUser,$"connect | u:{usernameTB.Text.Trim()} p:{userPassword.Password}"));
-            var msg = Net.RcvMsg(comm.GetStream());
-            msg.Parse();
+                Net.SendMsg(comm.GetStream(), new Message(curUser, $"connect | u:{usernameTB.Text.Trim()} p:{userPassword.Password}"));
+                var msg = Net.RcvMsg(comm.GetStream());
+                msg.Parse();
 
-            string message = msg.GetArgument(ArgType.MESSAGE);
-            bool isSuccess = msg.content as User != null;
-            
-            var displayMsg = "Credentials are validated for this user : " + message;
-            var msgColor = Brushes.Green;
-            if (isSuccess)
-            {
-                curUser = msg.content as User;
-                curUser.isAuthentified = true;
+                string message = msg.GetArgument(ArgType.MESSAGE);
+                bool isSuccess = msg.content as User != null;
+
+                var displayMsg = "Credentials are validated for this user : " + message;
+                var msgColor = Brushes.Green;
+                if (isSuccess)
+                {
+                    curUser = msg.content as User;
+                    curUser.isAuthentified = true;
                     System.Timers.Timer t = new System.Timers.Timer(3000);
                     t.Elapsed += T_Elapsed;
                     t.AutoReset = false;
                     t.Start();
 
-            }
-            else
-            {
-                displayMsg = "Credentials are wrong for this user :" + message;
-                msgColor = Brushes.Red;
-            }
+                }
+                else
+                {
+                    displayMsg = "Credentials are wrong for this user :" + message;
+                    msgColor = Brushes.Red;
+                }
 
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
@@ -110,7 +99,7 @@ namespace WebChatGui
         {
             Dispatcher.BeginInvoke(new Action(() =>
             {
-                new MessengerWindow(comm,curUser).Show();
+                new MessengerWindow(comm, curUser).Show();
                 Close();
             }));
         }

@@ -10,7 +10,6 @@ namespace ChatCommunication
     public class Data
     {
         public static List<Topic> topicList = new List<Topic>();
-        public static List<User> users = new List<User>();
         public static readonly List<ClientUser> userClients = new List<ClientUser>();
         public static TcpClient RetrieveClientFromUsername(string username)
         {

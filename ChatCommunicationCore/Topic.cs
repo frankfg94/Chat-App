@@ -34,6 +34,14 @@ namespace ChatCommunication
         public string Description { get; set; }
 
         #endregion
+
+        // Used for notifying the ui that a property changed and that it must be updated
+        public event PropertyChangedEventHandler PropertyChanged;
+        private void NotifyPropertyChanged([CallerMemberName] string propertyName = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
         public override bool Equals(object obj)
         {
             if ((obj == null) || !this.GetType().Equals(obj.GetType()))
@@ -59,14 +67,14 @@ namespace ChatCommunication
             Console.WriteLine("Message sent in topic : " + Name);
 
             // Refresh the messages for each client
-            foreach (var u in this.users)
+            foreach (var u in users)
             {
                 if(u.isAuthentified)
                 {
                     var msg = new Message(User.GetBotUser(), $"refresh topic | n:{Name}") ;
                     msg.mustBeParsed = true;
                     msg.content = chatMessage;
-                    var client = Data.RetrieveClientFromUsername(u.username);
+                    var client = Data.RetrieveClientFromUsername(u.username);    
                 
                     if(client != null)
                         Net.SendMsg(client.GetStream(), msg); // Refresh all the clients that are in this topic
@@ -74,12 +82,9 @@ namespace ChatCommunication
             }
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
-        private void NotifyPropertyChanged([CallerMemberName] string propertyName = "")
+        public override int GetHashCode()
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            return HashCode.Combine(name, users, chatMessages, infos, Name, addInfos, Description);
         }
-
-
     }
 }
