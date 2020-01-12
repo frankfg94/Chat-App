@@ -14,7 +14,7 @@ namespace ChatCommunication
         #region class variables
         private string name;
         
-        public List<User> users = new List<User>();
+        public List<User> joinedUsers = new List<User>();
         public List<ChatMessage>  chatMessages = new List<ChatMessage>();
         private string infos = string.Empty;
 
@@ -67,7 +67,7 @@ namespace ChatCommunication
             Console.WriteLine("Message sent in topic : " + Name);
 
             // Refresh the messages for each client
-            foreach (var u in users)
+            foreach (var u in joinedUsers)
             {
                 if(u.isAuthentified)
                 {
@@ -84,7 +84,7 @@ namespace ChatCommunication
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(name, users, chatMessages, infos, Name, addInfos, Description);
+            return HashCode.Combine(name, joinedUsers, chatMessages, infos, Name, addInfos, Description);
         }
     }
 }

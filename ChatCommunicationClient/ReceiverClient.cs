@@ -85,6 +85,7 @@ namespace ChatCommunication
             Console.WriteLine("[CLIENT] Creating TcpClient");
             comm = new TcpClient(IP_SERVER_ADDRESS, PORT);
             Console.WriteLine("[CLIENT] Connection OK");
+            Console.WriteLine("Welcome! "+Environment.NewLine+" Use connect | u:{username} p:{password} to log again" + Environment.NewLine + "To see the help section please type @local help in the console" );
             commandThread = new Thread(ListenForClientCommands);
             commandThread.Start();
             while (true)
@@ -116,10 +117,42 @@ namespace ChatCommunication
                                 else
                                     Console.WriteLine("No topics are locally saved");
                                 break;
+                            case "@local help":
+                                string helpText = Environment.NewLine + "///////Help section//////" + Environment.NewLine +
+                                    "# Joining/listening to a topic to be notified of future messages : join | n:<the name of the topic>" + Environment.NewLine +
+                                    "\tExample : join | n:topic1" + Environment.NewLine +
+                                    "# Leaving a topic : leave topic | n:<the name of the topic>" + Environment.NewLine +
+                                    "\tExample : leave topic | n:topic1" + Environment.NewLine +
+                                    "# Sending a private message to an user : msg user | u:<user name> m:<the text of the message, no brackets needed>" + Environment.NewLine +
+                                    "\tExample : msg user | u:François m:Hey how are you doing?" + Environment.NewLine +
+                                     "# Edit a topic : edit topic | n:<topic name> nn:<new name of the topic> d:<description of the topic>" + Environment.NewLine +
+                                    "\tExample : edit topic | n:test nn:test-edit d:description" + Environment.NewLine +
+                                    "# Sending a message to a topic : msg topic | n:<the name of the topic> m:<the text of the message, no brackets needed>" + Environment.NewLine +
+                                    "\tExample : msg topic | n:topic1 m:Hello everyone?" + Environment.NewLine +
+                                     "# Creating a topic : create topic | n:<topic name>" + Environment.NewLine +
+                                    "\tExample : create topic | n:test" + Environment.NewLine +
+                                     "# Deleting a topic : delete topic | n:<the name of the topic>" + Environment.NewLine +
+                                    "\tExample : delete topic | n:topic1" + Environment.NewLine +
+                                     "# Sending a file to an user : send file user | u:<username> nn:<The new name of the audio file> p:<the path of the audio file>" + Environment.NewLine +
+                                     "# Viewing the user list : list users | data" + Environment.NewLine +
+                                     "# Viewing a specific topic and its messages : view topic | n:<the name of the topic>" + Environment.NewLine +
+                                     "# Viewing the topic list : list topics | data" + Environment.NewLine +
+                                     "\tExample : send file topic |  n:topic1 nn:test.docx p:C:\\Users\\franc\\Downloads\\hello.docx" + Environment.NewLine +
+                                     "# Sending a file to all the users in a topic : send file topic | u:<username> n:<The new name of the audio file> p:<the path of the audio file>" + Environment.NewLine +
+                                    "\tExample : send file user |  u:François nn:test.docx p:C:\\Users\\franc\\Downloads\\hello.docx" + Environment.NewLine +
+                                     "# Sending a .wav audio record to an user : send audio user | u:<username>" + Environment.NewLine +
+                                    "\tExample : send audio user | u:François" + Environment.NewLine+
+                                    "# Sending a .wav audio record to all the users of a topic : send audio topic | n:<the name of the topic>" + Environment.NewLine +
+                                    "\tExample : send audio topic | n:topic1" + Environment.NewLine+
+                                    "# You can also edit with the commands 'delete msg | id:<id>' 'edit msg | id:<id> m:<new text of the message>' but you need to remember the message id " + Environment.NewLine;
+                                Console.WriteLine(helpText);
+
+                                break;
                             default:
                                 Console.WriteLine("Unrecognized local command");
                                 break;
                         }
+                        keyboardCommand = "";
                     }
                     else
                     {
@@ -235,6 +268,10 @@ namespace ChatCommunication
             Console.WriteLine("Disconnection is successful. Use connect | u:{username} p:{password} to log again");
         }
 
+        /// <summary>
+        /// Save a file from any kind of format into the MyDocuments folder
+        /// </summary>
+        /// <param name="msg"></param>
         private void DownloadFile(Message msg)
         {
             var preciousData = msg.content as byte[];
@@ -242,6 +279,9 @@ namespace ChatCommunication
             DownloadFile(preciousData, filenameWithExtension);
         }
 
+        /// <summary>
+        /// Save a file from any kind of format into the MyDocuments folder
+        /// </summary>
         private void DownloadFile(byte[] preciousData, string filenameWithExtension)
         {
             var path = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\" + filenameWithExtension;
@@ -274,6 +314,10 @@ namespace ChatCommunication
             }
         }
 
+        /// <summary>
+        /// Record audio from the windows platform and assign the recorded audio in the passed message (in its content)
+        /// </summary>
+        /// <param name="m"></param>
         public void ConfigureAudioToSend(Message m)
         {
             if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -283,9 +327,18 @@ namespace ChatCommunication
                 Console.WriteLine("Recording audio, press Enter to stop and send ...");
                 Console.ReadLine();
                 audioModule.StopRecording();
+
                 var audioData = File.ReadAllBytes("c:\\temp\\toSend.wav");
                 Console.WriteLine("Audio recorded, size : " + audioData.Length + " bytes");
                 m.content = audioData;
+                try
+                {
+                    File.Delete("c:\\temp\\toSend.wav");
+                }
+                catch (IOException ex)
+                {
+                    Console.WriteLine("IO Exception : " + ex);
+                }
             }
             else
             {

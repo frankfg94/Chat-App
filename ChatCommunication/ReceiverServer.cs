@@ -18,7 +18,14 @@ namespace ChatCommunication
         }
 
         bool run = true;
+
+        /// <summary>
+        ///  identifier of a message
+        /// </summary>
         public static int msgGlobalId = 0;
+        private static object lockGenId = new object();
+        private static object lockSendMsg = new object();
+        private static object lockEnterTopic = new object();
 
         public void doOperation()
         {
@@ -41,7 +48,7 @@ namespace ChatCommunication
                             Console.WriteLine("Signal received : " + msg.fullCommand);
                             if (msg.author.isAuthentified)
                             {
-                                doOperationsAsUser(msg, msg.CommandPart, comm);
+                                doOperationsAsUser(msg, comm);
                             }
                             else
                             {
@@ -101,6 +108,9 @@ namespace ChatCommunication
                 {
                     Console.WriteLine("A client failed to connect itself to the server, Reason : " + textMsg);
                 }
+
+
+                // Sending the login result to the client
                 var respToTheClient = new Message(User.GetBotUser(), $"auth status | m:{textMsg}");
                 respToTheClient.mustBeParsed = true;
                 respToTheClient.content = connectedUser;
@@ -129,10 +139,19 @@ namespace ChatCommunication
             }
         }
 
-        public void doOperationsAsUser(Message msg, string commandLine, TcpClient comm)
+        /// <summary>
+        ///  Analyse the commandPart property of the message passed in parameter (received from the client) and execute a server operation
+        /// </summary>
+        /// <param name="msg">The message that contains the command, and additionnal data such as bytes arrays for files</param>
+        /// <param name="comm">The TcpClient of the client that sent this command</param>
+        public void doOperationsAsUser(Message msg, TcpClient comm)
         {
             switch (msg.CommandPart)
             {
+                case "list users":
+                    SendUserListTextToAllClients();
+                    msg = null;
+                    break;
                 case "sync user list":
                     SendUsersToAllClients();
                     msg = null;
@@ -157,6 +176,10 @@ namespace ChatCommunication
                 case "join":
                     msg = EnterTopic(msg);
                     break;
+                case "leave topic":
+                    LeaveTopic(msg, comm);
+                    msg = null;
+                    break;
                 case "msg topic":
                 case "send msg topic":
                     SendMessageInTopic(msg);
@@ -164,7 +187,8 @@ namespace ChatCommunication
                     break;
                 case "list msg topic":
                 case "view topic":
-                    msg = GetConversationOfTopic(msg.GetArgument(ArgType.NAME));
+                    ViewTopicTxt(msg.GetArgument(ArgType.NAME), comm);
+                    msg = null;
                     break;
                 case "msg user":
                     SendMessageToUser(msg);
@@ -187,11 +211,11 @@ namespace ChatCommunication
                     msg = null;
                     break;
                 case "download topic":
-                    SyncTopicForHisClient(comm, msg, msg.GetArgument(ArgType.NAME));
+                    SendTopic(comm, msg, msg.GetArgument(ArgType.NAME));
                     msg = null;
                     break;
                 case "download topics":
-                    SyncTopicsForHisClient(comm, msg);
+                    SendAllTopics(comm, msg);
                     msg = null;
                     break;
                 case "delete msg":
@@ -204,8 +228,6 @@ namespace ChatCommunication
                     else
                         EditMsgAndSend(msg.GetArgument(ArgType.MSG_ID), msg.GetArgument(ArgType.MESSAGE));
                     msg = null;
-                    break;
-                case "block user":
                     break;
                 case "help":
                     break;
@@ -229,6 +251,43 @@ namespace ChatCommunication
 
         }
 
+        private void LeaveTopic(Message msg, TcpClient client)
+        {
+            User u = msg.author;
+            string topicName = msg.GetArgument(ArgType.NAME);
+            LeaveTopic(u,topicName, client);
+        }
+
+        private void LeaveTopic(User u, string topicName, TcpClient userClient)
+        {
+            Topic topic = Data.topicList.Find(x => x.Name.Equals(topicName));
+                if (topic.joinedUsers.Find(x => x.username.Equals(u.username)) != null)
+                {
+                    // Notify the members that an user has left
+                    SendMessageInTopic(User.GetBotUser(),topic.Name, $"User {u.username} has left the topic {topic.Name}");
+                    topic.joinedUsers.Remove(u);
+
+                }
+                else
+                {
+                Net.SendMsg(userClient.GetStream(), new Message(User.GetBotUser(), "Failed to quit topic : you are not in the topic : " + topic.Name));
+                }
+        }
+
+        /// <summary>
+        /// View the topic but in a text format
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="askerClient"></param>
+        private void ViewTopicTxt(string name,TcpClient askerClient)
+        {
+            string conversation = GetConversationOfTopic(name);
+            Net.SendMsg(askerClient.GetStream(),new Message(User.GetBotUser(),conversation));
+        }
+
+        /// <summary>
+        /// Send the list of all the registered users to the clients
+        /// </summary>
         private void SendUsersToAllClients()
         {
             Message m = new Message(User.GetBotUser(),"sync user list | data");
@@ -241,13 +300,34 @@ namespace ChatCommunication
 
         }
 
+        private void SendUserListTextToAllClients()
+        {
+            StringBuilder sb = new StringBuilder(User.userList.Count);
+            sb.Append("//////// User List ///////////");
+            foreach (var user in User.userList)
+            {
+                sb.Append($"{user.username} (connected : {user.isAuthentified})" + Environment.NewLine);
+            }
+            Message m = new Message(User.GetBotUser(), sb.ToString());
+            m.content = User.userList;
+            foreach (var tcpUser in Data.userClients)
+            {
+                Net.SendMsg(tcpUser.tcpClient.GetStream(), m);
+            }
+            Console.WriteLine("Sent user list to all clients");
 
+        }
 
+        /// <summary>
+        /// Create a conversationnal group
+        /// </summary>
+        /// <param name="invitedUsers">The list of users that will automatically join/listen to the topic</param>
+        /// <param name="creatorComm">The TcpClient of the user who created the topic</param>
         public void CreateTopic(string name, string description, List<User> invitedUsers, TcpClient creatorComm = null)
         {
 
             var topic = new Topic(name);
-            topic.users.AddRange(invitedUsers);
+            topic.joinedUsers.AddRange(invitedUsers);
 
             // If the description is an empty string, then we consider that there is no description for the topic
             if (!string.Empty.Equals(description))
@@ -267,10 +347,15 @@ namespace ChatCommunication
             }
         }
 
+        /// <summary>
+        /// Create a topic and notify all clients that this topic is now created
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="invitedUsers"></param>
         public void CreateTopicAndNotifyAll(string name, List<User> invitedUsers)
         {
             var topic = new Topic(name);
-            topic.users.AddRange(invitedUsers);
+            topic.joinedUsers.AddRange(invitedUsers);
             Data.topicList.Add(topic);
             Console.WriteLine("> User list on this new server : ");
             foreach (var u in Data.userClients)
@@ -280,8 +365,12 @@ namespace ChatCommunication
             Console.WriteLine($"Topic '{name}' created successfully ");
         }
 
-        // Must be used by the server
-        public Message GetConversationOfTopic(string name)
+        /// <summary>
+        /// Get a message containing the conv
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public string GetConversationOfTopic(string name)
         {
             Topic t = Data.topicList.Find(x => x.Name.Equals(name));
             StringBuilder conversation = new StringBuilder();
@@ -297,16 +386,16 @@ namespace ChatCommunication
             {
                 conversation.AppendLine($" >> The conversation is empty for the topic '{name}'");
             }
-            return new Message(User.GetBotUser(), conversation.ToString());
+            return conversation.ToString();
 
         }
 
         /// <summary>
-        /// Server only
+        /// Send the complete topic list to a specific client, to refresh all of his data
         /// </summary>
-        /// <param name="client"></param>
+        /// <param name="client">The client to which we will send the topic list</param>
         /// <param name="msg"></param>
-        public void SyncTopicsForHisClient(TcpClient client, Message msg)
+        public void SendAllTopics(TcpClient client, Message msg)
         {
             msg.fullCommand = "sync topics | data";
             msg.content = Data.topicList;
@@ -314,7 +403,13 @@ namespace ChatCommunication
             Net.SendMsg(client.GetStream(), msg);
         }
 
-        public void SyncTopicForHisClient(TcpClient comm, Message msg, string topicName)
+        /// <summary>
+        /// Send a single topic instead of a list of topics to gain performances
+        /// </summary>
+        /// <param name="comm"></param>
+        /// <param name="msg"></param>
+        /// <param name="topicName"></param>
+        public void SendTopic(TcpClient comm, Message msg, string topicName)
         {
             msg.fullCommand = $"sync topic | n:{topicName}";
             msg.content = Data.topicList.Find(x => x.Name.Equals(topicName));
@@ -323,7 +418,11 @@ namespace ChatCommunication
         }
 
 
-        // msg user | u:William m:coucou
+        /// <summary>
+        /// Send a message to a specific user, it won't be stored in the server but directly on the client's machine,
+        /// this can help the client increase its privacy and lower the amount of data to store on the server
+        /// </summary>
+        /// <param name="msg"></param>
         public void SendMessageToUser(Message msg)
         {
             var destUsername = msg.GetArgument(ArgType.USERNAME);
@@ -333,10 +432,10 @@ namespace ChatCommunication
             var destUser = users.Find(u => u.username.Equals(destUsername));
             var msgId = GetNewMsgIdSafe();
 
-            // Send to the user
+            // 1. Send to the user
             SendMessageToUser(destClient.GetStream(), msg.author, destUser, messageContent, msgId);
 
-            // Send the message to self
+            // 2. Send the message to self, so that the sender will also store the message privately
             if (!destUsername.Equals(msg.author.username))
                 SendMessageToUser(Data.RetrieveClientFromUsername(msg.author.username).GetStream(), msg.author, destUser, messageContent, msgId);
         }
@@ -351,6 +450,10 @@ namespace ChatCommunication
             Console.WriteLine("msg sent to user : " + destUser.username);
         }
 
+        /// <summary>
+        /// Send a refresh command to all the clients to make sure they have the latest version of a topic
+        /// </summary>
+        /// <param name="msg"></param>
         public void UpdateTopic(Message msg)
         {
             var topicName = msg.GetArgument(ArgType.NAME);
@@ -360,11 +463,19 @@ namespace ChatCommunication
 
             foreach (var tcpUser in Data.userClients)
             {
-                Net.SendMsg(tcpUser.tcpClient.GetStream(),
-                    new Message(User.GetBotUser(), $"sync topic | n:{topicName} ") { mustBeParsed = true, content = topicToEdit });
+                // The user must be connected to avoid useless messages and it must already be in it to be notified
+                if(tcpUser.user.isAuthentified && topicToEdit.joinedUsers.Contains(tcpUser.user))
+                {
+                    Net.SendMsg(tcpUser.tcpClient.GetStream(),
+                       new Message(User.GetBotUser(), $"sync topic | n:{topicName} ") { mustBeParsed = true, content = topicToEdit });
+                }
             }
         }
 
+        /// <summary>
+        /// Delete a specific topic
+        /// </summary>
+        /// <param name="msg"></param>
         public void DeleteTopic(Message msg)
         {
             var topicName = msg.GetArgument(ArgType.NAME);
@@ -374,6 +485,8 @@ namespace ChatCommunication
             var resp = new Message(User.GetBotUser(), "sync topics | data");
             resp.content = Data.topicList;
             resp.mustBeParsed = true;
+
+            // We send a refresh signal to all the clients to make them remove the deleted topic (useful for gui clients)
             foreach (var tcpUser in Data.userClients)
             {
                 Net.SendMsg(tcpUser.tcpClient.GetStream(), resp);
@@ -422,7 +535,7 @@ namespace ChatCommunication
             // We only send the message to the users that need to be updated (that are in the topic)
             if (editedTopic != null)
             {
-                foreach (var user in editedTopic.users)
+                foreach (var user in editedTopic.joinedUsers)
                 {
                     Net.SendMsg(Data.RetrieveClientFromUsername(user.username).GetStream()
                         , new Message(User.GetBotUser(), $"edit msg | id:{msgIdToEdit} m:{newContent}") { mustBeParsed = true, content = replaceContent }); ;
@@ -456,7 +569,7 @@ namespace ChatCommunication
             }
 
             if (editedTopic != null)
-                foreach (var user in editedTopic.users)
+                foreach (var user in editedTopic.joinedUsers)
                 {
                     Net.SendMsg(Data.RetrieveClientFromUsername(user.username).GetStream()
                         , new Message(User.GetBotUser(), $"rmv msg | id:{msgIdToDel}") { mustBeParsed = true });
@@ -508,7 +621,7 @@ namespace ChatCommunication
         {
             Console.WriteLine($"Data to send size to the topic {topicName} : " + fileData.Length);
             Topic t = Data.topicList.Find(x => x.Name.Equals(topicName));
-            foreach (var user in t.users)
+            foreach (var user in t.joinedUsers)
             {
                 TcpClient destClient = Data.RetrieveClientFromUsername(user.username);
                 if (destClient != null)
@@ -562,7 +675,7 @@ namespace ChatCommunication
             var destTopicName = msg.GetArgument(ArgType.NAME);
             var audioData = msg.content as byte[];
             var topic = Data.topicList.Find(x => x.Name.Equals(destTopicName));
-            foreach (var user in topic.users)
+            foreach (var user in topic.joinedUsers)
             {
                 SendAudioMsgToUser(msg.author, user.username, audioData);
             }
@@ -594,7 +707,7 @@ namespace ChatCommunication
                 foreach (Topic t in Data.topicList)
                 {
                     var line = $"{i}) {t.Name} ({t.chatMessages.Count} msgs)";
-                    if (t.users.Find(x => x.username.Equals(senderOfRequest.username)) == null)
+                    if (t.joinedUsers.Find(x => x.username.Equals(senderOfRequest.username)) == null)
                     {
                         line += " [Not joined]";
                     }
@@ -610,14 +723,17 @@ namespace ChatCommunication
             return new Message(User.GetBotUser(), sb.ToString());
         }
 
-        private static object lockSendMsg = new object();
-        private static object lockEnterTopic = new object();
+
         public Message EnterTopic(Message m)
         {
             var topicName = m.GetArgument(ArgType.NAME);
             return EnterTopic(m.author, topicName);
         }
 
+        /// <summary>
+        /// Makes the user join a specified topic, he will then be able to view all its messages, and be notified of any changes & new messages received in this topic
+        /// </summary>
+        /// <returns></returns>
         public Message EnterTopic(User u, string topicName)
         {
             foreach (Topic t in Data.topicList)
@@ -637,11 +753,13 @@ namespace ChatCommunication
         {
             lock (lockEnterTopic)
             {
-                if (topic.users.Find(x => x.username.Equals(u.username)) == null)
+                if (topic.joinedUsers.Find(x => x.username.Equals(u.username)) == null)
                 {
-                    topic.users.Add(u);
+                    topic.joinedUsers.Add(u);
                     Console.WriteLine($"User {u.username} has entered the chat in the topic " + topic.Name);
-                    return GetConversationOfTopic(topic.Name);
+                    
+                    // When an user joins a topic, you can directly view the list of the messages
+                    return new Message(User.GetBotUser(),GetConversationOfTopic(topic.Name));
                 }
                 else
                 {
@@ -650,15 +768,24 @@ namespace ChatCommunication
             }
         }
 
-
+        /// <summary>
+        /// Generates a new id with a lock to avoid duplicated ids due to the multithreading aspect of the server
+        /// </summary>
         private int GetNewMsgIdSafe()
         {
-            lock (lockSendMsg)
+            lock (lockGenId)
             {
                 return msgGlobalId++;
             }
         }
 
+        /// <summary>
+        /// Send a message (with text information only or the whole object) in a specified existing topic
+        /// </summary>
+        /// <param name="msgAuthor">The sender of the message</param>
+        /// <param name="destTopicName">The topic name to send the message in</param>
+        /// <param name="content">The raw text that will displayed in the message</param>
+        /// <param name="senderChatMsg">The optionnal ChatMessage, used for sending non text messages (image messages for example)</param>
         public void SendMessageInTopic(User msgAuthor, string destTopicName, string content, ChatMessage senderChatMsg = null)
         {
             foreach (Topic t in Data.topicList)
@@ -668,7 +795,9 @@ namespace ChatCommunication
                     lock (lockSendMsg)
                     {
                         if (senderChatMsg == null)
+                        {
                             t.AddMessageAndSync(new ChatMessage(DateTime.Now, msgAuthor, destTopicName, content) { id = GetNewMsgIdSafe() });
+                        }
                         else
                         {
                             senderChatMsg.id = GetNewMsgIdSafe();

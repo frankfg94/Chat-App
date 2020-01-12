@@ -17,6 +17,11 @@ namespace ChatCommunication
         public User author { get; set; }
         public string fullCommand;
         bool isParsed = false;
+
+        /// <summary>
+        /// The content can be used to transport any kind of information such as images, videos which are
+        /// often in bytes array
+        /// </summary>
         public object content;
 
         public Message(User user, string command)

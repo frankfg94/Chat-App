@@ -240,7 +240,6 @@ namespace WebChatGuiClient
             else
             {
                 topic.chatMessages.Add(chatMessage);
-
                 // Add the message live to the currentTopic
                 if (topic.Name.Equals(window.curTopic.Name))
                 {

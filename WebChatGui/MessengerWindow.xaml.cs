@@ -315,7 +315,7 @@ namespace WebChatGuiClient
                 {
                     Net.SendMsg(serverComm.GetStream(), new Message(curUser, $"join | n:{curTopic.Name}"));
                     Net.SendMsg(serverComm.GetStream(), new Message(curUser, $"download topic | n:{curTopic.Name}"));
-                    curTopic.users.Add(curUser);
+                    curTopic.joinedUsers.Add(curUser);
                     topicCard.Visibility = Visibility.Collapsed;
                     chatPanel.IsEnabled = true;
                     msgTbox.Focus();
@@ -374,14 +374,14 @@ namespace WebChatGuiClient
                 }
                 curChatter = null;
                 curTopic = item.Content as Topic;
-                if (curTopic.users.Find(x => x.username.Equals(curUser.username)) == null)
+                if (curTopic.joinedUsers.Find(x => x.username.Equals(curUser.username)) == null)
                 {
                     // Showing the card and the users
                     topicCard.Visibility = Visibility.Visible;
                     topicNameTblock.Text = curTopic.Name;
-                    topicUsCountTblock.Text = curTopic.users.Count + " users are on this topic";
+                    topicUsCountTblock.Text = curTopic.joinedUsers.Count + " users are on this topic";
                     userTopicsItemsControl.Items.Clear();
-                    foreach (var user in curTopic.users)
+                    foreach (var user in curTopic.joinedUsers)
                     {
                         userTopicsItemsControl.Items.Add(user);
                     }
